@@ -85,7 +85,7 @@ create table if not exists orders (
   email                text not null,
   items                jsonb not null default '[]',
   total_cents          int not null,
-  currency             text not null default 'KES',
+  currency             text not null default 'USD',
   status               order_status not null default 'pending',
   pesapal_tracking_id  text,
   pesapal_merchant_ref text not null,

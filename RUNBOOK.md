@@ -95,7 +95,7 @@ cp .env.example .env.local
 | `PESAPAL_CONSUMER_KEY` / `PESAPAL_CONSUMER_SECRET` | real checkout | server‑only; blank → mock checkout |
 | `PESAPAL_IPN_ID` | payment webhook | from the one‑time `registerIpn()` call (§2.1) |
 | `PESAPAL_BASE_URL` | PesaPal API | `https://pay.pesapal.com/v3` (live) or the sandbox URL |
-| `PESAPAL_CURRENCY` | order currency | default `KES` |
+| `PESAPAL_CURRENCY` | order currency | default `USD` |
 | `RESEND_API_KEY` | real receipt emails | blank → emails print to server console |
 | `EMAIL_FROM` | sender | must be a **verified** Resend sender/domain |
 | `CRON_SECRET` | protect `/api/cron/*` | blank → cron routes are open (fine in demo only) |

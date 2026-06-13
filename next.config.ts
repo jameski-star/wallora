@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Hide the on-screen dev activity badge (compiling/rendering, bottom-left).
+  // Compile/runtime errors are still surfaced; this only removes the indicator.
+  devIndicators: false,
   images: {
     // Next 16: `domains` is deprecated — use remotePatterns.
     remotePatterns: [

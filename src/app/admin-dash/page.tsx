@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Images, ShoppingCart, DollarSign, Download } from "lucide-react";
 import { getRepo } from "@/lib/repo";
+import { isRealPayment, isSimulatedOrder } from "@/lib/orders";
 import { formatPrice } from "@/lib/utils";
 
 export default async function AdminOverview() {
@@ -9,7 +10,8 @@ export default async function AdminOverview() {
     repo.listWallpapers({ includeMature: true, limit: 1000 }),
     repo.listOrders({ limit: 1000 }),
   ]);
-  const paid = orders.filter((o) => o.status === "paid");
+  // Real money only — simulated (demo) payments are excluded from metrics.
+  const paid = orders.filter(isRealPayment);
   const revenue = paid.reduce((s, o) => s + o.totalCents, 0);
   const downloads = wallpapers.reduce((s, w) => s + w.downloads, 0);
 
@@ -42,7 +44,14 @@ export default async function AdminOverview() {
               <li key={o.id} className="flex items-center justify-between py-2">
                 <span className="font-mono text-xs">{o.pesapalMerchantRef}</span>
                 <span className="text-muted">{o.email}</span>
-                <span className="capitalize">{o.status}</span>
+                <span className="flex items-center gap-1.5 capitalize">
+                  {o.status}
+                  {isSimulatedOrder(o) && (
+                    <span className="rounded bg-surface-2 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+                      Demo
+                    </span>
+                  )}
+                </span>
                 <span className="font-medium">{formatPrice(o.totalCents, o.currency)}</span>
               </li>
             ))}

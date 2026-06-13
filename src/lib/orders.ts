@@ -12,6 +12,24 @@ export interface CheckoutLine {
 }
 
 /**
+ * True if an order is backed by a SIMULATED payment rather than a real PesaPal
+ * transaction. The demo gateway (used when PesaPal isn't configured) stamps a
+ * tracking id of `mock_<ref>`; real transactions get a genuine PesaPal id.
+ * Admin revenue/paid-order metrics exclude these so demo data never inflates
+ * real figures.
+ */
+export function isSimulatedOrder(order: Pick<Order, "pesapalTrackingId">): boolean {
+  return (order.pesapalTrackingId ?? "").startsWith("mock_");
+}
+
+/** A genuinely paid order (real money), for admin revenue metrics. */
+export function isRealPayment(
+  order: Pick<Order, "status" | "pesapalTrackingId">,
+): boolean {
+  return order.status === "paid" && !isSimulatedOrder(order);
+}
+
+/**
  * Create a pending order from cart lines (re-priced server-side — client prices
  * are never trusted), then hand off to PesaPal and return the redirect URL.
  */
