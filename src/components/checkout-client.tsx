@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Lock, ShieldCheck } from "lucide-react";
+import { Loader2, Lock, ShieldCheck, X } from "lucide-react";
 import { Button } from "./ui";
 import { useCart } from "./cart";
 import { beginCheckout } from "@/app/checkout/actions";
@@ -13,6 +13,19 @@ export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
   const [email, setEmail] = useState(defaultEmail);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // When set, the PesaPal payment page is shown in an in-page modal iframe
+  // instead of navigating the whole window away (or opening a new tab).
+  const [payUrl, setPayUrl] = useState<string | null>(null);
+
+  // Lock background scroll while the payment popup is open.
+  useEffect(() => {
+    if (!payUrl) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [payUrl]);
 
   async function pay() {
     setError(null);
@@ -22,8 +35,12 @@ export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
       cart.lines.map((l) => l.wallpaperId),
     );
     if (res.ok) {
-      // Hand off to the PesaPal hosted page (or the demo simulator).
-      window.location.assign(res.redirectUrl);
+      // Open the PesaPal hosted page inside a modal popup. When payment
+      // completes, PesaPal redirects the iframe back to /checkout/callback,
+      // which breaks out to the top window (see EscapeIframe) so the buyer
+      // lands on the full confirmation page.
+      setPayUrl(res.redirectUrl);
+      setBusy(false);
     } else {
       setError(res.error);
       setBusy(false);
@@ -83,8 +100,77 @@ export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
           <span>{formatPrice(cart.totalCents)}</span>
         </div>
       </aside>
+
+      {payUrl && (
+        <PaymentModal url={payUrl} onClose={() => setPayUrl(null)} />
+      )}
     </div>
   );
+}
+
+/** In-page popup that hosts the PesaPal payment page in an iframe. */
+function PaymentModal({ url, onClose }: { url: string; onClose: () => void }) {
+  // Close on Escape for keyboard accessibility.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Complete your payment"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-[640px] max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-card border border-border bg-surface shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <span className="flex items-center gap-1.5 text-sm font-medium">
+            <Lock size={14} /> Complete your payment
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close payment window"
+            className="rounded-lg p-1 text-muted transition hover:bg-surface-2 hover:text-foreground"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <iframe
+          src={url}
+          title="PesaPal secure payment"
+          className="h-full w-full flex-1 bg-white"
+          allow="payment"
+        />
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Rendered on the callback page. If that page was loaded inside the payment
+ * popup iframe, escape to the top window so the buyer sees the full-page
+ * confirmation (and the cart clears in the top-level context).
+ */
+export function EscapeIframe() {
+  useEffect(() => {
+    try {
+      if (window.top && window.top !== window.self) {
+        window.top.location.href = window.location.href;
+      }
+    } catch {
+      /* cross-origin top — nothing we can do, page still renders in-frame */
+    }
+  }, []);
+  return null;
 }
 
 /** Clears the cart once a purchase is confirmed. */

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CheckCircle2, Clock, XCircle, Download } from "lucide-react";
 import { Container, ButtonLink } from "@/components/ui";
-import { ClearCartOnMount } from "@/components/checkout-client";
+import { ClearCartOnMount, EscapeIframe } from "@/components/checkout-client";
 import { fulfillByMerchantRef } from "@/lib/orders";
 import { getViewer } from "@/lib/auth";
 import { formatPrice } from "@/lib/utils";
@@ -39,6 +39,9 @@ export default async function CallbackPage({
 
   return (
     <Container className="flex min-h-[60vh] items-center justify-center py-12">
+      {/* If this page rendered inside the payment popup iframe, break out to
+          the top window so the buyer sees the full confirmation page. */}
+      <EscapeIframe />
       <div className="w-full max-w-lg rounded-card border border-border bg-surface p-8 text-center">
         {status === "paid" && order && (
           <>
@@ -108,6 +111,10 @@ export default async function CallbackPage({
 
         {status === "pending" && (
           <>
+            {/* An order exists and the buyer already went through PesaPal — clear
+                the cart so the same wallpaper isn't left "awaiting another
+                payment" (which previously let the buyer pay twice). */}
+            <ClearCartOnMount />
             <Clock className="mx-auto mb-4 text-amber-400" size={48} />
             <h1 className="text-2xl font-bold">Payment processing</h1>
             <p className="mt-2 text-muted">
