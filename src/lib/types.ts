@@ -1,4 +1,4 @@
-/** Wallora domain types — shared across the data layer, UI, and APIs. */
+/** Aurava domain types — shared across the data layer, UI, and APIs. */
 
 export type DeviceType = "desktop" | "phone" | "tablet";
 

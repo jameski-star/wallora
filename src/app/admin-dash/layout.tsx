@@ -33,7 +33,7 @@ export default async function AdminLayout({
         <span className="rounded-md bg-accent/15 px-2 py-1 text-xs font-semibold text-accent">
           ADMIN
         </span>
-        <h1 className="text-xl font-bold">Wallora Dashboard</h1>
+        <h1 className="text-xl font-bold">Aurava Dashboard</h1>
       </div>
       <div className="grid gap-8 lg:grid-cols-[200px_1fr]">
         <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">

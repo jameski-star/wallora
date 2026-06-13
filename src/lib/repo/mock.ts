@@ -30,7 +30,7 @@ type Store = {
 };
 
 // Persist across HMR reloads in dev via globalThis.
-const g = globalThis as unknown as { __walloraStore?: Store };
+const g = globalThis as unknown as { __auravaStore?: Store };
 
 function init(): Store {
   return {
@@ -42,7 +42,7 @@ function init(): Store {
   };
 }
 
-const store: Store = (g.__walloraStore ??= init());
+const store: Store = (g.__auravaStore ??= init());
 
 function applyFilter(
   all: Wallpaper[],

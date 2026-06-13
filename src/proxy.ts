@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
   // No Supabase → demo mode. Gate protected routes on the demo cookie's
   // presence; role checks still happen server-side.
   if (!SUPABASE_URL || !SUPABASE_ANON) {
-    if (needsAuth && !request.cookies.has("wallora_demo_user")) {
+    if (needsAuth && !request.cookies.has("aurava_demo_user")) {
       const url = request.nextUrl.clone();
       url.pathname = "/login";
       url.searchParams.set("next", pathname);

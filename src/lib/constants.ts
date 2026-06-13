@@ -1,13 +1,13 @@
 import type { AgeRating, DeviceType, HolidayType } from "./types";
 
-export const SITE_NAME = "Wallora";
+export const SITE_NAME = "Aurava";
 export const SITE_TAGLINE = "Premium wallpapers in stunning 4K & HD";
 
 // ── Legal / contact ────────────────────────────────────────────────────────
 // TODO: replace these placeholders with your registered business details
 // before launch, and have the legal pages reviewed by a professional.
-export const LEGAL_ENTITY = "Wallora"; // registered business / trading name
-export const SITE_CONTACT_EMAIL = "support@wallora.app";
+export const LEGAL_ENTITY = "Aurava"; // registered business / trading name
+export const SITE_CONTACT_EMAIL = "support@aurava.app";
 export const LEGAL_JURISDICTION = "Kenya";
 export const LEGAL_LAST_UPDATED = "10 June 2026";
 

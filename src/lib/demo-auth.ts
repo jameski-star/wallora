@@ -8,7 +8,7 @@ import type { Profile } from "./types";
  * ever verified here — this is a local demo, not production auth).
  */
 
-const COOKIE = "wallora_demo_user";
+const COOKIE = "aurava_demo_user";
 
 export async function getDemoProfile(): Promise<Profile | null> {
   const store = await cookies();
@@ -36,7 +36,7 @@ export async function clearDemoProfile(): Promise<void> {
   store.delete(COOKIE);
 }
 
-/** Make a demo profile. Email `admin@wallora.app` is granted the admin role. */
+/** Make a demo profile. Email `admin@aurava.app` is granted the admin role. */
 export function makeDemoProfile(
   email: string,
   displayName: string,
@@ -47,7 +47,7 @@ export function makeDemoProfile(
     email,
     displayName,
     dateOfBirth,
-    role: email.trim().toLowerCase() === "admin@wallora.app" ? "admin" : "user",
+    role: email.trim().toLowerCase() === "admin@aurava.app" ? "admin" : "user",
     createdAt: new Date().toISOString(),
   };
 }

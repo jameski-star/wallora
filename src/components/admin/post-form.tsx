@@ -35,7 +35,7 @@ export function PostForm({ post }: { post?: Post }) {
           <input name="coverImage" defaultValue={p?.coverImage} className={inp} />
         </Field>
         <Field label="Author">
-          <input name="author" defaultValue={p?.author ?? "Wallora"} className={inp} />
+          <input name="author" defaultValue={p?.author ?? "Aurava"} className={inp} />
         </Field>
       </Row>
 

@@ -1,4 +1,4 @@
-# Wallora — Operations & Setup Guide
+# Aurava — Operations & Setup Guide
 
 ## Table of Contents
 
@@ -28,7 +28,7 @@
 
 ```bash
 git clone <your-repo-url>
-cd wallora
+cd aurava
 pnpm install
 ```
 

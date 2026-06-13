@@ -94,7 +94,7 @@ export function WallpaperForm({
 
       <Row>
         <Field label="Preview video (Cloudinary public id or URL)" hint="Live wallpapers only — the looping clip">
-          <input name="videoPublicId" defaultValue={w?.videoPublicId} placeholder="e.g. wallora/aurora-loop or https://…/loop.mp4" className={inp} />
+          <input name="videoPublicId" defaultValue={w?.videoPublicId} placeholder="e.g. aurava/aurora-loop or https://…/loop.mp4" className={inp} />
         </Field>
         <Field label="Loop length (seconds)" hint="Live wallpapers only">
           <input name="durationSec" type="number" min={1} max={60} defaultValue={w?.durationSec ?? 6} className={inp} />

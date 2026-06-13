@@ -112,7 +112,7 @@ export const SEED_WALLPAPERS: Wallpaper[] = SPECS.map((s, i) => {
     isMature: Boolean(s.mature),
     priceCents,
     isPremium,
-    seoTitle: `${s.title} ${Math.max(s.w, s.h) >= 3840 ? "4K" : "HD"} ${s.device} Wallpaper | Wallora`,
+    seoTitle: `${s.title} ${Math.max(s.w, s.h) >= 3840 ? "4K" : "HD"} ${s.device} Wallpaper | Aurava`,
     seoDescription: `Download ${s.title}, a premium ${s.category} wallpaper for ${s.device}. ${isPremium ? "Available in original high resolution." : "Free download."}`,
     isFeatured: i < 6,
     holidayTags: s.holiday ?? ["none"],
@@ -158,16 +158,16 @@ export const SEED_FEATURED: FeaturedItem[] = [
 export const SEED_POSTS: Post[] = [
   {
     id: "post_welcome",
-    slug: "welcome-to-wallora",
-    title: "Welcome to Wallora",
+    slug: "welcome-to-aurava",
+    title: "Welcome to Aurava",
     excerpt:
       "How to find, preview and download wallpapers that look great on every screen.",
-    body: "Wallora is a curated marketplace for high-resolution wallpapers.\n\nBrowse by category, filter by your device, and preview every wallpaper in detail before you download. Free wallpapers download instantly — premium pieces are delivered in full original resolution after checkout.\n\nThanks for stopping by. New collections drop every week.",
+    body: "Aurava is a curated marketplace for high-resolution wallpapers.\n\nBrowse by category, filter by your device, and preview every wallpaper in detail before you download. Free wallpapers download instantly — premium pieces are delivered in full original resolution after checkout.\n\nThanks for stopping by. New collections drop every week.",
     coverImage: "",
-    author: "The Wallora Team",
+    author: "The Aurava Team",
     tags: ["announcements", "guide"],
     published: true,
-    seoTitle: "Welcome to Wallora",
+    seoTitle: "Welcome to Aurava",
     seoDescription:
       "How to find, preview and download wallpapers that look great on every screen.",
     createdAt: new Date(Date.UTC(2026, 5, 1)).toISOString(),
@@ -179,9 +179,9 @@ export const SEED_POSTS: Post[] = [
     title: "Choosing the right wallpaper resolution",
     excerpt:
       "4K, 2K or HD? A quick guide to picking the sharpest wallpaper for your device.",
-    body: "A wallpaper looks its best when its resolution matches — or exceeds — your screen.\n\nFor most laptops and desktops, a 4K (3840×2160) wallpaper is a safe choice. Phones are taller than they are wide, so look for portrait resolutions like 1170×2532.\n\nEvery Wallora listing shows the exact resolution and the device it's optimised for, so you can pick with confidence.",
+    body: "A wallpaper looks its best when its resolution matches — or exceeds — your screen.\n\nFor most laptops and desktops, a 4K (3840×2160) wallpaper is a safe choice. Phones are taller than they are wide, so look for portrait resolutions like 1170×2532.\n\nEvery Aurava listing shows the exact resolution and the device it's optimised for, so you can pick with confidence.",
     coverImage: "",
-    author: "The Wallora Team",
+    author: "The Aurava Team",
     tags: ["guide", "tips"],
     published: true,
     seoTitle: "Choosing the right wallpaper resolution",

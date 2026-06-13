@@ -31,7 +31,7 @@ export function Navbar({
     <header className="sticky top-0 z-50 border-b border-border glass">
       <Container className="flex h-16 items-center gap-4">
         <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="grid size-8 place-items-center rounded-lg bg-accent font-bold text-accent-foreground">W</span>
+          <span className="grid size-8 place-items-center rounded-lg bg-accent font-bold text-accent-foreground">A</span>
           <span className="text-lg">{SITE_NAME}</span>
         </Link>
 

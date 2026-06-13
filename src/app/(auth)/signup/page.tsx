@@ -22,7 +22,7 @@ export default async function SignupPage({
     <Container className="flex min-h-[70vh] items-center justify-center py-12">
       <div className="w-full max-w-md rounded-card border border-border bg-surface p-8">
         <h1 className="text-2xl font-bold">Create your account</h1>
-        <p className="mt-1 text-sm text-muted">Join Wallora to buy and download wallpapers.</p>
+        <p className="mt-1 text-sm text-muted">Join Aurava to buy and download wallpapers.</p>
         <div className="mt-6">
           <AuthForm mode="signup" next={next} />
         </div>

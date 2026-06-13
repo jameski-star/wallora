@@ -256,7 +256,7 @@ export function originalDownloadUrl(
   if (!features.cloudinary) return publicId; // absolute seed URL (demo)
 
   const { id, delivery } = normalizeSource(publicId);
-  const filename = `wallora-${wallpaper.slug}`;
+  const filename = `aurava-${wallpaper.slug}`;
   const base = `https://res.cloudinary.com/${env.cloudinaryCloud}/image/${delivery}`;
   // fl_attachment:<name> sets Content-Disposition: attachment; filename=<name>.
   // No quality/format transform: free downloads get the true original asset.

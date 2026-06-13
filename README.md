@@ -1,8 +1,8 @@
-# Wallora
+# Aurava
 
 A premium wallpaper marketplace — **Next.js 16 (App Router) · TypeScript · Tailwind v4 · Supabase · Cloudinary · PesaPal v3 · Resend · Motion**.
 
-Wallora is built to **run with zero external credentials**: every integration has a
+Aurava is built to **run with zero external credentials**: every integration has a
 local fallback (in-memory catalog, cookie auth, mock payment, console email), so you
 can browse the full experience immediately and switch each subsystem to the real
 service by adding env keys.
@@ -27,7 +27,7 @@ pnpm dev          # http://localhost:3000
 
 ## Demo mode (no keys)
 
-- **Auth** is cookie-based. Any email logs in; use **`admin@wallora.app`** for the admin dashboard at `/admin-dash`.
+- **Auth** is cookie-based. Any email logs in; use **`admin@aurava.app`** for the admin dashboard at `/admin-dash`.
 - **Payments** route to `/checkout/mock` and auto-confirm.
 - **Email** download links print to the server console.
 - **Catalog** is the in-memory seed (`src/lib/repo/seed.ts`); writes reset on restart.

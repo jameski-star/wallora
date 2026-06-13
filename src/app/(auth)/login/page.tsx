@@ -26,7 +26,7 @@ export default async function LoginPage({
         <p className="mt-1 text-sm text-muted">Sign in to access your downloads.</p>
         {!features.supabase && (
           <p className="mt-3 rounded-lg border border-accent/30 bg-accent/10 px-3 py-2 text-xs text-accent">
-            Demo mode — any email works. Use <strong>admin@wallora.app</strong> for admin access.
+            Demo mode — any email works. Use <strong>admin@aurava.app</strong> for admin access.
           </p>
         )}
         <div className="mt-6">

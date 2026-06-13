@@ -1,8 +1,8 @@
-# Wallora — Operations Runbook
+# Aurava — Operations Runbook
 
 How to set up the admin account on Supabase, take the app live, and run it day‑to‑day.
 
-> Wallora runs in two modes. **Demo mode** (no env keys) uses an in‑memory catalog,
+> Aurava runs in two modes. **Demo mode** (no env keys) uses an in‑memory catalog,
 > cookie auth, a mock payment page and console email — great for local browsing.
 > **Live mode** flips each subsystem to the real service as soon as you add its env
 > keys (`src/lib/env.ts` does the detection per‑block). This runbook covers live mode.
@@ -58,7 +58,7 @@ originals must stay private and are only handed out via 60‑second signed URLs.
    `src/app/admin-dash/layout.tsx` checks `role = 'admin'` and lets you in.
 
 > **Demo‑mode shortcut (no Supabase):** any email logs in, and the single magic email
-> **`admin@wallora.app`** is treated as admin (`src/lib/demo-auth.ts`). Useful locally,
+> **`admin@aurava.app`** is treated as admin (`src/lib/demo-auth.ts`). Useful locally,
 > not for production.
 
 To revoke an admin later: `update profiles set role = 'user' where email = '…';`

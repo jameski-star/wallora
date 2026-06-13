@@ -52,7 +52,7 @@ export async function startCheckout(
     merchantRef,
     amount: totalCents / 100,
     currency: order.currency,
-    description: `Wallora — ${items.length} wallpaper${items.length === 1 ? "" : "s"}`,
+    description: `Aurava — ${items.length} wallpaper${items.length === 1 ? "" : "s"}`,
     email,
   });
 

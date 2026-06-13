@@ -18,7 +18,7 @@ export const baseMetadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Wallora is a premium wallpaper marketplace. Browse and download stunning 4K & HD wallpapers for desktop, phone and tablet.",
+    "Aurava is a premium wallpaper marketplace. Browse and download stunning 4K & HD wallpapers for desktop, phone and tablet.",
   keywords: ["wallpapers", "4k wallpapers", "hd wallpapers", "desktop", "phone", "premium"],
   openGraph: {
     type: "website",

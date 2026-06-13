@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Hide the floating Next.js dev indicator (compile/runtime errors still surface).
+  devIndicators: false,
   images: {
     // Next 16: `domains` is deprecated — use remotePatterns.
     remotePatterns: [

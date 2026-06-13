@@ -8,7 +8,7 @@ export function Footer() {
       <Container className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <Link href="/" className="flex items-center gap-2 font-bold">
-            <span className="grid size-8 place-items-center rounded-lg bg-accent text-white">W</span>
+            <span className="grid size-8 place-items-center rounded-lg bg-accent text-white">A</span>
             {SITE_NAME}
           </Link>
           <p className="mt-3 max-w-xs text-sm text-muted">{SITE_TAGLINE}. Crafted for every screen.</p>

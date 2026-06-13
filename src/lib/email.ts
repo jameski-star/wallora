@@ -17,7 +17,7 @@ export async function sendReceiptAndDownloads(
   order: Order,
   links: DownloadLink[],
 ): Promise<void> {
-  const subject = `Your Wallora order ${order.id.slice(0, 12)} — download links`;
+  const subject = `Your Aurava order ${order.id.slice(0, 12)} — download links`;
   const html = receiptHtml(order, links);
 
   if (!features.resend) {
@@ -62,6 +62,6 @@ function receiptHtml(order: Order, links: DownloadLink[]): string {
     <h2 style="font-size:16px">Your downloads</h2>
     <p style="color:#888;font-size:13px">Links expire in 60 seconds — re-download anytime from your account.</p>
     ${downloads}
-    <p style="color:#999;font-size:12px;margin-top:24px">Wallora — premium wallpapers.</p>
+    <p style="color:#999;font-size:12px;margin-top:24px">Aurava — premium wallpapers.</p>
   </div>`;
 }

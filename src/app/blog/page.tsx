@@ -9,7 +9,7 @@ import { postImageUrl } from "@/lib/cloudinary";
 export const metadata: Metadata = {
   title: "Blog",
   description:
-    "Guides, tips and announcements from Wallora — how to find, customise and get the most from your wallpapers.",
+    "Guides, tips and announcements from Aurava — how to find, customise and get the most from your wallpapers.",
   alternates: { canonical: "/blog" },
 };
 
@@ -27,7 +27,7 @@ export default async function BlogIndex() {
   return (
     <Container className="py-8 sm:py-12">
       <SectionHeading
-        title="The Wallora Blog"
+        title="The Aurava Blog"
         subtitle="Guides, tips and announcements."
       />
 

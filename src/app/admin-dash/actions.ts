@@ -103,7 +103,7 @@ export async function saveWallpaper(formData: FormData): Promise<void> {
     isPremium,
     seoTitle:
       String(formData.get("seoTitle") ?? "").trim() ||
-      `${d.title} Wallpaper | Wallora`,
+      `${d.title} Wallpaper | Aurava`,
     seoDescription:
       String(formData.get("seoDescription") ?? "").trim() || d.description,
     isFeatured: bool(formData.get("isFeatured")),
@@ -225,11 +225,11 @@ export async function savePost(formData: FormData): Promise<void> {
     excerpt: d.excerpt || d.body.slice(0, 160),
     body: d.body,
     coverImage: String(formData.get("coverImage") ?? "").trim(),
-    author: String(formData.get("author") ?? "").trim() || "Wallora",
+    author: String(formData.get("author") ?? "").trim() || "Aurava",
     tags: csv(formData.get("tags")),
     published: bool(formData.get("published")),
     seoTitle:
-      String(formData.get("seoTitle") ?? "").trim() || `${d.title} | Wallora Blog`,
+      String(formData.get("seoTitle") ?? "").trim() || `${d.title} | Aurava Blog`,
     seoDescription:
       String(formData.get("seoDescription") ?? "").trim() ||
       (d.excerpt || d.body.slice(0, 160)),

@@ -1,7 +1,7 @@
 /**
  * Centralized environment access + feature-detection.
  *
- * Wallora is designed to RUN with zero external credentials: when a service's
+ * Aurava is designed to RUN with zero external credentials: when a service's
  * env vars are missing, the app falls back to a mock/in-memory implementation
  * so the full UI is browsable locally. Add keys to `.env.local` to switch each
  * subsystem over to the real service.
@@ -38,7 +38,7 @@ export const env = {
 
   // Resend
   resendKey: pick("RESEND_API_KEY"),
-  emailFrom: pick("EMAIL_FROM") ?? "Wallora <noreply@wallora.app>",
+  emailFrom: pick("EMAIL_FROM") ?? "Aurava <noreply@aurava.app>",
 
   // Cron auth
   cronSecret: pick("CRON_SECRET"),

@@ -37,7 +37,7 @@ export default async function HomePage() {
         />
       ) : (
         <div className="rounded-card border border-border bg-surface p-12 text-center">
-          <h1 className="text-4xl font-bold">Wallora</h1>
+          <h1 className="text-4xl font-bold">Aurava</h1>
           <p className="mt-2 text-muted">{SITE_TAGLINE}</p>
           <ButtonLink href="/wallpapers" className="mt-6">Browse wallpapers</ButtonLink>
         </div>

@@ -98,7 +98,7 @@ export function AuthForm({
           </>
         ) : (
           <>
-            New to Wallora?{" "}
+            New to Aurava?{" "}
             <Link href={`/signup?next=${encodeURIComponent(next)}`} className="text-accent hover:underline">
               Create an account
             </Link>
