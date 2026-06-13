@@ -1,0 +1,13 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/wallpaper-of-day",
+      "schedule": "3 0 * * *"
+    },
+    {
+      "path": "/api/cron/wallpaper-of-week",
+      "schedule": "7 0 * * 1"
+    }
+  ]
+}

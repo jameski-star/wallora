@@ -1,26 +1,183 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Wallora design system — minimal, dark-mode-first.
+ * Aesthetic: near-monochrome neutrals so the wallpapers do the talking,
+ * one warm amber accent reserved for CTAs / active state / "live".
+ *
+ * Layers:
+ *   1. Primitive theme vars on :root (dark) and .light (overrides).
+ *   2. @theme inline maps them to Tailwind color/radius/font utilities,
+ *      so `bg-surface`, `text-muted`, `rounded-card` etc. resolve to vars
+ *      and switch live with the theme class — no rebuild needed.
+ */
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* Varied radii — uniform corners read as "stamped out". */
+  --radius-card: 14px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ---- Dark (default, no class) ---------------------------------------- */
+:root {
+  --background: oklch(14% 0.004 264);
+  --surface: oklch(17.5% 0.005 264);
+  --surface-2: oklch(22% 0.006 264);
+  --border: oklch(27.5% 0.008 264);
+  --foreground: oklch(96% 0.003 264);
+  --muted: oklch(66% 0.012 264);
+
+  /* Warm amber/gold. Foreground is near-black so text on the fill passes. */
+  --accent: oklch(78% 0.135 78);
+  --accent-foreground: oklch(22% 0.03 70);
+
+  /* Error/destructive. A desaturated red tuned to the OKLCH palette so it
+     reads as part of the system, not a stock Tailwind red. */
+  --danger: oklch(67% 0.17 22);
+  --danger-foreground: oklch(96% 0.02 22);
+
+  color-scheme: dark;
+}
+
+/* ---- Light (.light on <html>) ---------------------------------------- */
+.light {
+  --background: oklch(99% 0 0);
+  --surface: oklch(100% 0 0);
+  --surface-2: oklch(96.5% 0.003 264);
+  --border: oklch(91% 0.005 264);
+  --foreground: oklch(20% 0.012 264);
+  --muted: oklch(46% 0.014 264);
+
+  /* Deepened so amber text/links keep contrast on white. */
+  --accent: oklch(62% 0.145 66);
+  --accent-foreground: oklch(99% 0 0);
+
+  /* Deepened so error text keeps contrast on white surfaces. */
+  --danger: oklch(55% 0.2 25);
+  --danger-foreground: oklch(99% 0 0);
+
+  color-scheme: light;
+}
+
+/* ---- Base ------------------------------------------------------------ */
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--accent) 30%, transparent);
+  color: var(--foreground);
+}
+
+/* Consistent, accent-tinted focus ring for keyboard users. */
+:focus-visible {
+  outline: 2px solid color-mix(in oklch, var(--accent) 70%, transparent);
+  outline-offset: 2px;
+}
+
+/* ---- Frosted chrome (navbar, sticky bars) ---------------------------- */
+.glass {
+  background: color-mix(in oklch, var(--background) 72%, transparent);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+
+/* ---- True masonry -----------------------------------------------------
+ * CSS columns preserve each wallpaper's real aspect ratio (varied heights)
+ * with no layout JS. Items opt out of column breaks.
+ */
+.masonry {
+  column-count: 1;
+  column-gap: 1rem;
+}
+@media (min-width: 640px) {
+  .masonry {
+    column-count: 2;
+  }
+}
+@media (min-width: 1024px) {
+  .masonry {
+    column-count: 3;
+  }
+}
+@media (min-width: 1536px) {
+  .masonry {
+    column-count: 4;
+  }
+}
+.masonry > * {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+
+/* ---- Loading shimmer -------------------------------------------------- */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, var(--foreground) 7%, transparent),
+    transparent
+  );
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+@keyframes shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* ---- Protected previews ----------------------------------------------
+ * Deterrents only (real safeguard = watermarked, low-res previews). The
+ * media itself can't be dragged/selected; the parent <Link> stays clickable.
+ */
+.protected-img img,
+.protected-img video {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
+}
+
+/* ---- Motion safety ---------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
