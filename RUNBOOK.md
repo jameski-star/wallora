@@ -92,6 +92,7 @@ cp .env.example .env.local
 | `SUPABASE_SERVICE_ROLE_KEY` | signed downloads, order writes | **server‑only** |
 | `SUPABASE_PREMIUM_BUCKET` | originals bucket | default `premium-wallpapers` |
 | `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | watermarked previews | without it, seed/Unsplash URLs are used as‑is |
+| `CLOUDINARY_API_SECRET` | signs preview URLs (tamper‑proof cap) | **server‑only**; blank → unsigned URLs. Only enforced with “Strict transformations” on (§2.2) |
 | `PESAPAL_CONSUMER_KEY` / `PESAPAL_CONSUMER_SECRET` | real checkout | server‑only; blank → mock checkout |
 | `PESAPAL_IPN_ID` | payment webhook | from the one‑time `registerIpn()` call (§2.1) |
 | `PESAPAL_BASE_URL` | PesaPal API | `https://pay.pesapal.com/v3` (live) or the sandbox URL |
@@ -111,6 +112,29 @@ Set `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME`. Upload your **preview** source images t
 Cloudinary; the app derives watermarked/blurred/downscaled previews on the fly
 (`src/lib/cloudinary.ts`). `next.config.ts` already allow‑lists `res.cloudinary.com`,
 `images.unsplash.com`, `picsum.photos`, and `*.supabase.co`.
+
+#### Lock the resolution cap (signed URLs)
+Premium previews are resolution‑capped (≤1600px) so the public never gets a
+full‑res copy. That cap is only meaningful if nobody can edit the URL to remove
+it — otherwise a buyer can open DevTools, strip `w_1600` from the preview URL,
+and pull the full‑res original straight off Cloudinary. To close that:
+
+1. **Set the secret.** Copy your Cloudinary **API secret** (Console → Settings →
+   API Keys) into `CLOUDINARY_API_SECRET` (local `.env.local` *and* Vercel env).
+   Every transformed URL the app emits now carries an `s--sig--` signature.
+2. **Turn on enforcement.** Cloudinary Console → **Settings → Security →
+   Restricted media types** → enable **Transformed**. This makes any unsigned or
+   tampered transform return **401**. *Signing does nothing until this is on.*
+
+Order matters: deploy step 1 first (so live signed URLs exist), **then** flip
+step 2. If you enable enforcement before the signed build is live, every preview
+404/401s. Leaving `CLOUDINARY_API_SECRET` blank keeps URLs unsigned (the
+pre‑signing behavior) — safe, but the cap is editable.
+
+Note: this protects against *fetching a bigger file*. It does **not** stop
+someone saving the capped preview that's already on screen (impossible for any
+displayed image); right‑click/drag are already deterred client‑side
+(`src/components/protected-image.tsx`).
 
 ---
 

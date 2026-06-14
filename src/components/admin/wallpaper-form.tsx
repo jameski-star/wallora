@@ -5,7 +5,7 @@ import { Loader2, Check as CheckIcon, AlertCircle } from "lucide-react";
 import { saveWallpaper } from "@/app/admin-dash/actions";
 import { Button } from "@/components/ui";
 import { DEVICE_TYPES, AGE_RATINGS } from "@/lib/constants";
-import { probeImageUrl } from "@/lib/cloudinary";
+import { probeImageUrl } from "@/lib/cloudinary-url";
 import type { Category, Wallpaper } from "@/lib/types";
 
 type ProbeState =

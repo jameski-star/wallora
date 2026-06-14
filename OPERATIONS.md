@@ -47,9 +47,8 @@ Key variables to set:
 | `NEXT_PUBLIC_SUPABASE_URL` | **Yes** | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Yes** | Supabase anon/public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Yes** | Supabase service role key (server-side only, never expose to client) |
-| `CLOUDINARY_CLOUD_NAME` | No | Cloudinary cloud name for image delivery |
-| `CLOUDINARY_API_KEY` | No | Cloudinary API key |
-| `CLOUDINARY_API_SECRET` | No | Cloudinary API secret |
+| `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` | No | Cloudinary cloud name for image delivery (blank → seed/Unsplash URLs) |
+| `CLOUDINARY_API_SECRET` | No | Server-only. Signs preview URLs so the resolution cap can't be edited away. Only enforced with "Strict transformations" on — see §6.5 |
 | `PESAPAL_CONSUMER_KEY` | No | PesaPal sandbox/live consumer key |
 | `PESAPAL_CONSUMER_SECRET` | No | PesaPal sandbox/live consumer secret |
 | `PESAPAL_IPN_ID` | No | Set after registering IPN from admin dashboard |
@@ -246,6 +245,30 @@ Set all environment variables in your platform's dashboard.
 - [ ] PesaPal IPN registered (if using payments)
 - [ ] Cron jobs configured (if using featured automation)
 - [ ] Supabase Storage bucket created (if serving premium originals from Supabase)
+- [ ] Cloudinary URL signing enabled (§6.5) — recommended once you sell premium
+
+### 6.5 Lock the premium resolution cap (signed Cloudinary URLs)
+
+Premium previews are capped at ≤1600px so the public never receives a full-res
+copy. Without signing, that cap is **editable**: anyone can open DevTools, strip
+`w_1600` from the preview URL, and download the full-res original from
+Cloudinary — bypassing the paywall. Two steps close it:
+
+1. **Set the secret.** Put your Cloudinary **API secret** (Console → Settings →
+   API Keys) in `CLOUDINARY_API_SECRET`, locally and in your host's env. The app
+   then signs every transformed URL with an `s--sig--` segment
+   (`src/lib/cloudinary.ts`).
+2. **Enable enforcement.** Cloudinary Console → **Settings → Security →
+   Restricted media types** → turn on **Transformed**. Now any unsigned or
+   tampered transform returns **401**. Until this is on, signatures are ignored.
+
+**Deploy order:** ship the secret first (so signed URLs are live), *then* flip
+enforcement. Reversing the order 401s every preview. Leaving the secret blank
+keeps URLs unsigned — safe, but the cap stays editable.
+
+This stops fetching a *larger* file; it can't stop saving the capped preview
+already rendered on screen (true of any web image). Right-click and drag are
+deterred client-side in `src/components/protected-image.tsx`.
 
 ---
 
@@ -275,8 +298,18 @@ UPDATE profiles SET role = 'admin' WHERE email = 'your-email@example.com';
 ### Images not loading
 
 - **Demo mode** (`DEMO_MODE=true`): Uses Unsplash URLs directly — no Cloudinary needed
-- **Production**: Set `CLOUDINARY_CLOUD_NAME` and upload images to your Cloudinary account
+- **Production**: Set `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` and upload images to your Cloudinary account
 - **Premium downloads**: Upload original files to the Supabase Storage bucket (`premium-wallpapers` or as configured)
+
+### Previews 401 / "Invalid signature" after enabling signing
+
+**Cause:** "Strict transformations" was enabled in Cloudinary before the signed
+build went live, or `CLOUDINARY_API_SECRET` doesn't match the cloud's secret.
+
+**Fix:** Confirm `CLOUDINARY_API_SECRET` matches Console → Settings → API Keys,
+redeploy so signed URLs are live, *then* enable enforcement (§6.5). To
+temporarily unblock, turn off **Settings → Security → Restricted media types →
+Transformed** — URLs serve unsigned again.
 
 ### PesaPal payment not working
 

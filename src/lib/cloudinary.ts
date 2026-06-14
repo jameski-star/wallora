@@ -1,5 +1,10 @@
+import { createHash } from "node:crypto";
 import { env, features } from "./env";
+import { isAbsolute, normalizeSource } from "./cloudinary-url";
 import type { Wallpaper } from "./types";
+
+// Re-export the client-safe helpers so existing server importers keep working.
+export { probeImageUrl } from "./cloudinary-url";
 
 /**
  * Cloudinary preview pipeline.
@@ -14,6 +19,12 @@ import type { Wallpaper } from "./types";
  *
  * The paywall is protected by the resolution cap, NOT by watermarks: the public
  * never receives a premium image large enough to substitute for the purchase.
+ *
+ * That cap is only meaningful if it can't be edited away. Every transformed
+ * delivery URL below is therefore SIGNED (`s--sig--`) when an API secret is
+ * configured: stripping `w_1600` to fetch the full-res original then returns
+ * 401 (provided "Strict transformations" is enabled in the Cloudinary console).
+ * Without a secret the URLs are unsigned and behave exactly as before.
  *
  * When Cloudinary isn't configured, `originalPublicId` is treated as an
  * absolute fallback URL (the mock seed uses picsum/unsplash) so the UI still
@@ -34,74 +45,42 @@ type PreviewOptions = {
   quality?: number;
 };
 
-function isAbsolute(src: string): boolean {
-  return /^https?:\/\//.test(src);
-}
-
-function isCloudinary(src: string): boolean {
-  return src.includes("res.cloudinary.com/");
+/**
+ * Cloudinary signed-delivery prefix (`s--sig--`) for a given transform + public
+ * id, or "" when no secret is configured. The algorithm mirrors the Cloudinary
+ * SDK exactly so signatures validate on their CDN:
+ *   to_sign = "<transform>/<transform>/.../<publicId>"
+ *   sig     = base64( sha1(to_sign + api_secret) )
+ *             .slice(0, 8)  with  '/' → '_'  and  '+' → '-'
+ * The prefix is inserted between the delivery type and the transforms:
+ *   .../image/upload/s--sig--/<transforms>/<publicId>
+ */
+function signature(transforms: string[], id: string): string {
+  if (!env.cloudinaryApiSecret) return "";
+  const toSign = [...transforms, id].filter(Boolean).join("/");
+  const digest = createHash("sha1")
+    .update(toSign + env.cloudinaryApiSecret)
+    .digest("base64");
+  const sig = digest.slice(0, 8).replace(/\//g, "_").replace(/\+/g, "-");
+  return `s--${sig}--`;
 }
 
 /**
- * Extract the bare public id from a Cloudinary `upload` delivery URL (any
- * cloud). Returns null if the URL isn't an upload URL.
- *
- * Cloudinary upload paths look like:
- *   .../image/upload/<transforms...>/v<digits>/<folder>/<name>.<ext>
- * The version segment (`v123…`) is the reliable boundary before the public id.
+ * Assemble a (signed) Cloudinary delivery URL. The signature — when present —
+ * is computed over exactly the transform segments and public id that appear in
+ * the path, so the two always agree.
  */
-function uploadPublicId(url: string): string | null {
-  const m = url.match(
-    /res\.cloudinary\.com\/[^/]+\/(?:image|video)\/upload\/(.+)$/,
-  );
-  if (!m) return null;
-  const rest = m[1];
-  // The version segment (`v123…`) — whether after transforms or first in the
-  // path — is the reliable boundary before the public id.
-  const afterVersion = rest.match(/(?:^|\/)v\d+\/(.+)$/);
-  if (afterVersion) return afterVersion[1];
-  // No version present: drop a leading run of transformation segments
-  // (these always contain a `_` or `,`, e.g. `q_auto`, `c_limit,w_700`).
-  const segs = rest.split("/");
-  while (segs.length > 1 && /[,_]/.test(segs[0])) segs.shift();
-  return segs.join("/");
-}
-
-/**
- * Normalize an arbitrary stored image reference into a `(source, delivery)`
- * pair that we can safely apply our own transforms to.
- *
- * Admins — or buggy imports — sometimes store a *fully-formed* Cloudinary
- * delivery URL, occasionally one that's already `fetch`-wrapping ANOTHER
- * Cloudinary URL. Naively `fetch`-wrapping such a value again makes Cloudinary
- * recursively fetch itself, which times out (the `TimeoutError` seen in prod).
- * So we unwrap to the innermost real asset first:
- *   - `.../image/fetch/<transforms>/<remoteUrl>` → peel to <remoteUrl> (repeat)
- *   - `.../image/upload/<transforms>/<publicId>` → bare <publicId>, delivered
- *     via `upload` (no point re-fetching an asset already on Cloudinary)
- *   - external URL (Unsplash, etc.) → `fetch`
- *   - bare public id → `upload`
- */
-function normalizeSource(raw: string): {
-  id: string;
-  delivery: "upload" | "fetch";
-} {
-  let src = raw.trim();
-  // Peel nested Cloudinary `fetch` wrappers to reach the innermost source.
-  for (let i = 0; i < 6 && isCloudinary(src); i++) {
-    const m = src.match(
-      /res\.cloudinary\.com\/[^/]+\/(?:image|video)\/fetch\/(.+)$/,
-    );
-    if (!m) break;
-    const httpIdx = m[1].search(/https?:\/\//);
-    if (httpIdx === -1) break;
-    src = decodeURIComponent(m[1].slice(httpIdx));
-  }
-  // Landed on a Cloudinary upload URL → use its bare public id via `upload`.
-  const pid = uploadPublicId(src);
-  if (pid) return { id: pid, delivery: "upload" };
-  // Otherwise: remote URL → fetch; bare id → upload.
-  return { id: src, delivery: isAbsolute(src) ? "fetch" : "upload" };
+function deliveryUrl(
+  resource: "image" | "video",
+  delivery: "upload" | "fetch",
+  transforms: string[],
+  id: string,
+): string {
+  const base = `https://res.cloudinary.com/${env.cloudinaryCloud}/${resource}/${delivery}`;
+  // filter(Boolean) drops the signature segment when signing is disabled.
+  return [base, signature(transforms, id), ...transforms, id]
+    .filter(Boolean)
+    .join("/");
 }
 
 /**
@@ -138,10 +117,8 @@ export function previewUrl(
   }
 
   const transforms = [`c_limit,w_${width}`, `q_${quality}`, "f_auto"];
-
   const { id, delivery } = normalizeSource(publicId);
-  const base = `https://res.cloudinary.com/${env.cloudinaryCloud}/image/${delivery}`;
-  return `${base}/${transforms.join("/")}/${id}`;
+  return deliveryUrl("image", delivery, transforms, id);
 }
 
 /**
@@ -168,8 +145,7 @@ export function videoPreviewUrl(
     "du_6", // cap the public loop at ~6s
   ];
   const { id: vid, delivery } = normalizeSource(id);
-  const base = `https://res.cloudinary.com/${env.cloudinaryCloud}/video/${delivery}`;
-  return `${base}/${transforms.join("/")}/${vid}`;
+  return deliveryUrl("video", delivery, transforms, vid);
 }
 
 /**
@@ -185,8 +161,8 @@ export function placeholderUrl(
   const { id, delivery } = normalizeSource(
     wallpaper.previewPublicId || wallpaper.originalPublicId,
   );
-  const base = `https://res.cloudinary.com/${env.cloudinaryCloud}/image/${delivery}`;
-  return `${base}/c_limit,w_24/q_10/e_blur:1000/f_auto/${id}`;
+  const transforms = ["c_limit,w_24", "q_10", "e_blur:1000", "f_auto"];
+  return deliveryUrl("image", delivery, transforms, id);
 }
 
 /**
@@ -208,23 +184,8 @@ export function postImageUrl(
     return coverImage;
   }
   const { id, delivery } = normalizeSource(coverImage);
-  const base = `https://res.cloudinary.com/${env.cloudinaryCloud}/image/${delivery}`;
-  return `${base}/c_limit,w_${width}/q_auto/f_auto/${id}`;
-}
-
-/**
- * Loadable URL of the UNTRANSFORMED original, for client-side dimension
- * probing in the admin form. Returns the absolute URL as-is (mock/dev mode), or
- * a transform-free Cloudinary delivery URL so `naturalWidth/Height` reflect the
- * true asset resolution. Returns "" for a bare public id with no Cloudinary
- * configured (nothing loadable).
- */
-export function probeImageUrl(publicId: string): string {
-  const raw = publicId.trim();
-  if (!raw) return "";
-  if (!features.cloudinary) return isAbsolute(raw) ? raw : "";
-  const { id, delivery } = normalizeSource(raw);
-  return `https://res.cloudinary.com/${env.cloudinaryCloud}/image/${delivery}/${id}`;
+  const transforms = [`c_limit,w_${width}`, "q_auto", "f_auto"];
+  return deliveryUrl("image", delivery, transforms, id);
 }
 
 /**
@@ -246,6 +207,9 @@ export function ogImageUrl(
  * navigating to it. Premium originals are NOT served this way — they come from
  * the private Supabase bucket via a signed URL after purchase (lib/delivery.ts).
  *
+ * `fl_attachment` is itself a transformation, so this URL is signed too — under
+ * "Strict transformations" an unsigned variant would 401.
+ *
  * Without Cloudinary configured, falls back to the absolute seed URL.
  */
 export function originalDownloadUrl(
@@ -257,8 +221,8 @@ export function originalDownloadUrl(
 
   const { id, delivery } = normalizeSource(publicId);
   const filename = `aurava-${wallpaper.slug}`;
-  const base = `https://res.cloudinary.com/${env.cloudinaryCloud}/image/${delivery}`;
   // fl_attachment:<name> sets Content-Disposition: attachment; filename=<name>.
   // No quality/format transform: free downloads get the true original asset.
-  return `${base}/fl_attachment:${encodeURIComponent(filename)}/${id}`;
+  const transforms = [`fl_attachment:${encodeURIComponent(filename)}`];
+  return deliveryUrl("image", delivery, transforms, id);
 }

@@ -27,6 +27,11 @@ export const env = {
 
   // Cloudinary
   cloudinaryCloud: pick("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME"),
+  // Server-only secret used to sign delivery URLs (NOT NEXT_PUBLIC — never
+  // shipped to the client). On the client this resolves to undefined, so URL
+  // builders simply produce unsigned URLs there (which is fine — the signed
+  // ones are always built in Server Components).
+  cloudinaryApiSecret: pick("CLOUDINARY_API_SECRET"),
 
   // PesaPal v3
   pesapalConsumerKey: pick("PESAPAL_CONSUMER_KEY"),
@@ -51,6 +56,14 @@ export const features = {
   supabaseAdmin: Boolean(env.supabaseUrl && env.supabaseServiceKey),
   /** Cloudinary preview transformations. */
   cloudinary: Boolean(env.cloudinaryCloud),
+  /**
+   * Signed delivery URLs are available (cloud + secret present). When true,
+   * transformed URLs carry an `s--sig--` segment so the resolution cap can't be
+   * tampered with — but enforcement also requires "Strict transformations" to
+   * be enabled in the Cloudinary console (Settings → Security). Until then the
+   * signatures are simply ignored, so turning this on is safe at any time.
+   */
+  cloudinarySigned: Boolean(env.cloudinaryCloud && env.cloudinaryApiSecret),
   /** PesaPal live payment processing. */
   pesapal: Boolean(env.pesapalConsumerKey && env.pesapalConsumerSecret),
   /** Resend transactional email. */

@@ -1,5 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
+import { after } from "next/server";
 import { env } from "./env";
 import { getRepo } from "./repo";
 import { submitOrder, getTransactionStatus } from "./pesapal";
@@ -65,8 +66,11 @@ export async function startCheckout(
 
 /**
  * Verify + fulfill an order (idempotent). Called from the IPN webhook and the
- * checkout callback. On success: mark paid, bump download counts, generate
- * signed links, email the receipt + downloads.
+ * checkout callback. On success it marks the order paid and returns immediately
+ * so the confirmation page renders fast; the slower delivery work (download
+ * bumps, signed links, receipt email) is scheduled with `after()` to run once
+ * the response has been sent. The pending→paid flip happens before either
+ * caller returns, so the status guard above keeps delivery exactly-once.
  */
 export async function fulfillByMerchantRef(ref: string): Promise<Order | null> {
   const repo = await getRepo();
@@ -88,24 +92,47 @@ export async function fulfillByMerchantRef(ref: string): Promise<Order | null> {
     status: "paid",
     paidAt: new Date().toISOString(),
   });
+  const fulfilled = paid ?? order;
 
-  // Bump downloads + build signed links.
-  const wallpapers = await repo.getWallpapersByIds(
-    order.items.map((i) => i.wallpaperId),
-  );
-  const links: { title: string; url: string }[] = [];
-  for (const w of wallpapers) {
-    await repo.incrementDownloads(w.id);
-    try {
-      links.push({ title: w.title, url: await signedDownloadUrl(w) });
-    } catch (err) {
-      // The order is already paid; one missing original must NOT block the
-      // receipt or the other downloads. Log it and let the buyer recover via
-      // the order page (admin can re-upload, link regenerates on next click).
-      console.error(`Delivery link skipped for ${w.id}:`, err);
-    }
+  // Don't make the buyer wait on Cloudinary signing + the Resend email — the
+  // on-page download buttons work without them. Deliver after the response.
+  after(() => deliverOrder(fulfilled));
+
+  return fulfilled;
+}
+
+/**
+ * Post-payment side effects: bump download counts, generate signed links and
+ * email the receipt. Runs off the response path; failures are logged, never
+ * surfaced (the order is already paid and downloads remain available on-page).
+ */
+async function deliverOrder(order: Order): Promise<void> {
+  try {
+    const repo = await getRepo();
+    const wallpapers = await repo.getWallpapersByIds(
+      order.items.map((i) => i.wallpaperId),
+    );
+
+    // Bump downloads + build signed links in parallel.
+    const links = (
+      await Promise.all(
+        wallpapers.map(async (w) => {
+          await repo.incrementDownloads(w.id);
+          try {
+            return { title: w.title, url: await signedDownloadUrl(w) };
+          } catch (err) {
+            // One missing original must NOT block the receipt or the other
+            // downloads. The buyer can recover via the order page (admin can
+            // re-upload; the link regenerates on next click).
+            console.error(`Delivery link skipped for ${w.id}:`, err);
+            return null;
+          }
+        }),
+      )
+    ).filter((l): l is { title: string; url: string } => l !== null);
+
+    await sendReceiptAndDownloads(order, links);
+  } catch (err) {
+    console.error(`Order delivery failed for ${order.id}:`, err);
   }
-
-  await sendReceiptAndDownloads(paid ?? order, links);
-  return paid ?? order;
 }
