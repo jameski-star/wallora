@@ -41,7 +41,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: w.createdAt,
     changeFrequency: "monthly",
     priority: 0.6,
-    images: [w.previewPublicId],
+    // Strip any query string from the image URL before it lands in <image:loc>.
+    // Some preview images are Unsplash URLs whose `?auto=format&fit=crop` carries
+    // a bare `&` — invalid XML that makes Google reject the entire sitemap. Query
+    // params aren't needed for image indexing; Cloudinary URLs have none, so this
+    // is a no-op for real wallpapers.
+    images: [w.previewPublicId.split("?")[0]],
   }));
 
   return [...staticPages, ...legalPages, ...categoryPages, ...wallpaperPages, ...postPages];
