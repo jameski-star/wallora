@@ -7,7 +7,7 @@ export const SITE_TAGLINE = "Premium wallpapers in stunning 4K & HD";
 // TODO: replace these placeholders with your registered business details
 // before launch, and have the legal pages reviewed by a professional.
 export const LEGAL_ENTITY = "Aurava"; // registered business / trading name
-export const SITE_CONTACT_EMAIL = "support@aurava.app";
+export const SITE_CONTACT_EMAIL = "James@auravaw.tech";
 export const LEGAL_JURISDICTION = "Kenya";
 export const LEGAL_LAST_UPDATED = "10 June 2026";
 
