@@ -94,7 +94,7 @@ function deliveryUrl(
 export function previewUrl(
   wallpaper: Pick<
     Wallpaper,
-    "previewPublicId" | "originalPublicId" | "isPremium"
+    "previewPublicId" | "originalPublicId" | "videoPublicId" | "kind" | "isPremium"
   >,
   opts: PreviewOptions = {},
 ): string {
@@ -103,6 +103,13 @@ export function previewUrl(
     ? Math.min(opts.width ?? 800, PREMIUM_PREVIEW_MAX_WIDTH)
     : opts.width ?? 800;
   const publicId = wallpaper.previewPublicId || wallpaper.originalPublicId;
+
+  // Live wallpaper with no still image of its own → derive a poster from a
+  // representative frame of the looping video, so the thumbnail / OG image /
+  // detail-page poster all still resolve without a separately-uploaded still.
+  if (!publicId && wallpaper.kind === "live") {
+    return videoPosterUrl(wallpaper, opts);
+  }
 
   // Fallback (no Cloudinary): just return the seed URL, optionally sized.
   if (!features.cloudinary) {
@@ -149,18 +156,49 @@ export function videoPreviewUrl(
 }
 
 /**
- * A tiny, very-low-quality blurred placeholder for blur-up loading.
+ * Derive a still POSTER image from a LIVE wallpaper's video — a single frame
+ * extracted by Cloudinary (`so_auto` picks a representative one) delivered as a
+ * JPEG. This lets a live wallpaper skip a separately-uploaded still: its poster,
+ * OG/social image and grid thumbnail are all generated from the loop itself.
+ *
+ * Inherits the same premium width cap as `previewUrl`. Returns "" when there's
+ * no video, or when Cloudinary isn't configured (an absolute sample mp4 can't be
+ * frame-extracted), so callers fall back gracefully.
  */
-export function placeholderUrl(
-  wallpaper: Pick<Wallpaper, "previewPublicId" | "originalPublicId">,
+export function videoPosterUrl(
+  wallpaper: Pick<Wallpaper, "videoPublicId" | "isPremium">,
+  opts: PreviewOptions = {},
 ): string {
+  const id = wallpaper.videoPublicId;
+  if (!id || !features.cloudinary) return "";
+
+  const { quality = 70 } = opts;
+  const width = wallpaper.isPremium
+    ? Math.min(opts.width ?? 800, PREMIUM_PREVIEW_MAX_WIDTH)
+    : opts.width ?? 800;
+
+  // so_auto = representative frame; f_jpg forces an image (not a video) result.
+  const transforms = ["so_auto", `c_limit,w_${width}`, `q_${quality}`, "f_jpg"];
+  const { id: vid, delivery } = normalizeSource(id);
+  return deliveryUrl("video", delivery, transforms, vid);
+}
+export function placeholderUrl(
+  wallpaper: Pick<
+    Wallpaper,
+    "previewPublicId" | "originalPublicId" | "videoPublicId" | "kind"
+  >,
+): string {
+  const imageId = wallpaper.previewPublicId || wallpaper.originalPublicId;
   if (!features.cloudinary) {
-    const id = wallpaper.previewPublicId || wallpaper.originalPublicId;
-    return isAbsolute(id) ? id : "";
+    return isAbsolute(imageId) ? imageId : "";
   }
-  const { id, delivery } = normalizeSource(
-    wallpaper.previewPublicId || wallpaper.originalPublicId,
-  );
+  // Live wallpaper with no still → blur up from a frame of the video.
+  if (!imageId && wallpaper.kind === "live" && wallpaper.videoPublicId) {
+    const { id, delivery } = normalizeSource(wallpaper.videoPublicId);
+    const transforms = ["so_auto", "c_limit,w_24", "q_10", "e_blur:1000", "f_jpg"];
+    return deliveryUrl("video", delivery, transforms, id);
+  }
+  const { id, delivery } = normalizeSource(imageId);
   const transforms = ["c_limit,w_24", "q_10", "e_blur:1000", "f_auto"];
   return deliveryUrl("image", delivery, transforms, id);
 }
@@ -195,7 +233,7 @@ export function postImageUrl(
 export function ogImageUrl(
   wallpaper: Pick<
     Wallpaper,
-    "previewPublicId" | "originalPublicId" | "isPremium"
+    "previewPublicId" | "originalPublicId" | "videoPublicId" | "kind" | "isPremium"
   >,
 ): string {
   return previewUrl(wallpaper, { width: 1200, quality: 70 });

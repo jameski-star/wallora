@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Check as CheckIcon, AlertCircle, Sparkles } from "lucide-react";
+import { Loader2, Check as CheckIcon, AlertCircle, Sparkles, Clapperboard } from "lucide-react";
 import { saveWallpaper, analyzeWallpaper } from "@/app/admin-dash/actions";
 import { Button } from "@/components/ui";
 import { DEVICE_TYPES, AGE_RATINGS } from "@/lib/constants";
-import { probeImageUrl } from "@/lib/cloudinary-url";
+import { probeImageUrl, probeVideoUrl } from "@/lib/cloudinary-url";
 import type { AgeRating, Category, DeviceType, Wallpaper } from "@/lib/types";
 
 type ProbeState =
@@ -62,6 +62,8 @@ export function WallpaperForm({
   const [seoTitle, setSeoTitle] = useState(w?.seoTitle ?? "");
   const [seoDescription, setSeoDescription] = useState(w?.seoDescription ?? "");
   const [isMature, setIsMature] = useState(w?.isMature ?? false);
+  const [isLive, setIsLive] = useState(w?.kind === "live");
+  const [videoPublicId, setVideoPublicId] = useState(w?.videoPublicId ?? "");
 
   const [resolution, setResolution] = useState(w?.resolution ?? "3840x2160");
   const [probe, setProbe] = useState<ProbeState>({ status: "idle" });
@@ -98,19 +100,53 @@ export function WallpaperForm({
   }
 
   /**
+   * Read a live wallpaper's resolution straight from the video when it ships
+   * without a still. Loads the untransformed video's metadata off-screen to get
+   * `videoWidth/Height`, then sets resolution + device — the video counterpart
+   * to {@link detectDimensions}.
+   */
+  function detectVideoDimensions(publicId: string) {
+    const url = probeVideoUrl(publicId.trim());
+    if (!url) {
+      setProbe({ status: "idle" });
+      return;
+    }
+    setProbe({ status: "loading" });
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+      if (!width || !height) {
+        setProbe({ status: "error", message: "Could not read video size" });
+        return;
+      }
+      setResolution(`${width}x${height}`);
+      setDevice(deviceFromDimensions(width, height));
+      setProbe({ status: "done", width, height });
+    };
+    video.onerror = () =>
+      setProbe({ status: "error", message: "Could not load video from link" });
+    video.src = url;
+  }
+
+  /**
    * Ask Gemini to read the image and fill in the descriptive fields. Explicit,
    * button-triggered, and non-destructive of the admin's manual choices around
    * price/premium/featured — those aren't touched.
    */
   async function autofill() {
-    if (!originalPublicId.trim() && !previewPublicId.trim()) {
-      setAuto({ status: "error", message: "Add the image link first." });
+    const hasImage = Boolean(originalPublicId.trim() || previewPublicId.trim());
+    const hasVideo = isLive && Boolean(videoPublicId.trim());
+    if (!hasImage && !hasVideo) {
+      setAuto({ status: "error", message: "Add the image or video link first." });
       return;
     }
     setAuto({ status: "loading" });
     const result = await analyzeWallpaper({
       originalPublicId: originalPublicId.trim(),
       previewPublicId: previewPublicId.trim() || undefined,
+      videoPublicId: videoPublicId.trim() || undefined,
     });
     if (!result.ok) {
       setAuto({ status: "error", message: result.message });
@@ -130,7 +166,8 @@ export function WallpaperForm({
   }
 
   const canAutofill =
-    Boolean(originalPublicId.trim() || previewPublicId.trim()) &&
+    (Boolean(originalPublicId.trim() || previewPublicId.trim()) ||
+      (isLive && Boolean(videoPublicId.trim()))) &&
     auto.status !== "loading";
 
   return (
@@ -165,10 +202,18 @@ export function WallpaperForm({
       </Field>
 
       <Row>
-        <Field label="Original image (Cloudinary public id or URL)" required hint="Display source for all; download source for FREE items. Resolution is auto-detected from this.">
+        <Field
+          label="Original image (Cloudinary public id or URL)"
+          required={!isLive}
+          hint={
+            isLive
+              ? "Optional for live wallpapers — leave blank and we auto-generate the poster from a video frame."
+              : "Display source for all; download source for FREE items. Resolution is auto-detected from this."
+          }
+        >
           <input
             name="originalPublicId"
-            required
+            required={!isLive}
             value={originalPublicId}
             onChange={(e) => setOriginalPublicId(e.target.value)}
             onBlur={(e) => detectDimensions(e.target.value)}
@@ -205,22 +250,77 @@ export function WallpaperForm({
             ? "Filled title, description, tags, category, age rating, holidays & SEO — review before saving."
             : auto.status === "error"
               ? auto.message
-              : "Reads the image with Gemini and fills the descriptive fields."}
+              : "Reads the image — or a live wallpaper's video frame — with Gemini and fills the descriptive fields."}
         </span>
       </div>
+
+      {/* Live wallpaper — a clearly-grouped section so the upload path is
+          obvious: toggle it on, then point it at a looping video. */}
+      <fieldset className="rounded-lg border border-border bg-surface/50 p-4">
+        <label className="flex items-center gap-2.5 text-sm font-medium">
+          <input
+            type="checkbox"
+            name="isLive"
+            checked={isLive}
+            onChange={(e) => setIsLive(e.target.checked)}
+            className="size-4 accent-[var(--accent)]"
+          />
+          <Clapperboard size={16} className="text-accent" />
+          Live wallpaper (looping video)
+        </label>
+
+        {isLive ? (
+          <>
+            <p className="mt-2 text-xs text-muted">
+              Upload the loop to Cloudinary (an <code>.mp4</code>/<code>.webm</code>),
+              then paste its public id or URL below. The still image above is{" "}
+              <strong>optional</strong> — leave it blank and we auto-generate the
+              poster from a representative video frame. The public loop is
+              auto-capped to ~6s.
+            </p>
+            <Row>
+              <Field
+                label="Preview video (Cloudinary public id or URL)"
+                required
+                hint="The looping clip shown on hover and on the detail page"
+              >
+                <input
+                  name="videoPublicId"
+                  required={isLive}
+                  value={videoPublicId}
+                  onChange={(e) => setVideoPublicId(e.target.value)}
+                  onBlur={(e) => {
+                    // Detect resolution from the video only when there's no
+                    // still to detect it from (the still-image probe wins).
+                    if (!originalPublicId.trim()) detectVideoDimensions(e.target.value);
+                  }}
+                  placeholder="e.g. aurava/aurora-loop or https://…/loop.mp4"
+                  className={inp}
+                />
+              </Field>
+              <Field label="Loop length (seconds)" hint="Shown as metadata on the detail page">
+                <input
+                  name="durationSec"
+                  type="number"
+                  min={1}
+                  max={60}
+                  defaultValue={w?.durationSec ?? 6}
+                  className={inp}
+                />
+              </Field>
+            </Row>
+          </>
+        ) : (
+          <p className="mt-2 text-xs text-muted">
+            Leave this off for a normal still image. Turn it on to attach a looping
+            video and render it as a live wallpaper.
+          </p>
+        )}
+      </fieldset>
 
       <Field label="Premium original storage path (private Supabase bucket)" hint="Premium only — the paid download. Defaults to originals/<id>.jpg">
         <input name="originalStoragePath" defaultValue={w?.originalStoragePath} className={inp} />
       </Field>
-
-      <Row>
-        <Field label="Preview video (Cloudinary public id or URL)" hint="Live wallpapers only — the looping clip">
-          <input name="videoPublicId" defaultValue={w?.videoPublicId} placeholder="e.g. aurava/aurora-loop or https://…/loop.mp4" className={inp} />
-        </Field>
-        <Field label="Loop length (seconds)" hint="Live wallpapers only">
-          <input name="durationSec" type="number" min={1} max={60} defaultValue={w?.durationSec ?? 6} className={inp} />
-        </Field>
-      </Row>
 
       <Row>
         <Field label="Category" required>
@@ -340,7 +440,6 @@ export function WallpaperForm({
       </Row>
 
       <div className="flex flex-wrap gap-5">
-        <Check name="isLive" label="Live wallpaper (video)" defaultChecked={w?.kind === "live"} />
         <Check name="isPremium" label="Premium" defaultChecked={w?.isPremium} />
         <label className="flex items-center gap-2 text-sm">
           <input

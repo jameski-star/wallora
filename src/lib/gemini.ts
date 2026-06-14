@@ -59,9 +59,17 @@ const MAX_IMAGE_BYTES = 12 * 1024 * 1024;
  */
 export async function analyzeWallpaperImage({
   publicId,
+  imageUrl,
   categories,
 }: {
   publicId: string;
+  /**
+   * Pre-resolved, ready-to-fetch image URL. When given, it's fetched as-is
+   * instead of deriving one from `publicId` — used for live wallpapers, where
+   * the analysed image is a SIGNED frame extracted from the video (passing it
+   * through `probeImageUrl` would strip that frame transform).
+   */
+  imageUrl?: string;
   categories: Category[];
 }): Promise<WallpaperAnalysis> {
   if (!env.geminiApiKey) {
@@ -71,7 +79,9 @@ export async function analyzeWallpaperImage({
   const slugs = categories.map((c) => c.slug);
   if (slugs.length === 0) throw new Error("No categories to choose from.");
 
-  const { data: imageBase64, mimeType } = await loadImageInline(publicId);
+  const { data: imageBase64, mimeType } = await loadImageInline(
+    imageUrl || probeImageUrl(publicId),
+  );
 
   const prompt = buildPrompt(categories);
   const responseSchema = buildSchema(slugs);
@@ -133,11 +143,12 @@ export async function analyzeWallpaperImage({
 
 /** Fetch the (untransformed) original and base64-encode it for inline upload.
  *  Untransformed delivery is always allowed even under Cloudinary "Strict
- *  transformations", so this never 401s the way a tampered transform would. */
+ *  transformations", so this never 401s the way a tampered transform would.
+ *  Receives a fully-resolved URL — callers resolve it from a public id (still
+ *  image) or a signed video-frame URL (live wallpaper). */
 async function loadImageInline(
-  publicId: string,
+  url: string,
 ): Promise<{ data: string; mimeType: string }> {
-  const url = probeImageUrl(publicId);
   if (!url) {
     throw new Error("Couldn't resolve a loadable image URL from that link.");
   }
@@ -170,13 +181,13 @@ function buildPrompt(categories: Category[]): string {
     "",
     "Rules:",
     "- title: 3-7 words, evocative and specific to what's shown. No 'wallpaper' suffix.",
-    "- description: 1-2 natural sentences describing the scene, mood and colours.",
-    "- tags: 5-10 lowercase, single-or-two-word search terms (no '#', no duplicates).",
+    "- description: 1-2 SHORT sentences. Describe the scene, mood and colours, then end with a brief 'Best for …' note naming who or what setup it suits most (e.g. gamers, minimalist desktops, phone lock screens, cosy bedrooms). Keep it tight — do NOT pad, repeat, or stretch the wording.",
+    "- tags: ALWAYS return 6-10 lowercase, single-or-two-word search terms (no '#', no duplicates). Never leave this empty — cover subject, colours, mood and style.",
     "- categorySlug: choose the SINGLE best fit from this list (use the slug only):",
     list,
     "- ageRating: 'everyone' unless the image is suggestive/violent; '18+' only for explicit content.",
     "- isMature: true only when ageRating is '18+'.",
-    "- holidayTags: include a holiday ONLY if the image clearly depicts it, else ['none'].",
+    "- holidayTags: tag any holidays the image evokes through its theme, colours or season — e.g. snow/pine/lights → christmas, hearts/roses/pink-red → valentines, pumpkins/spooky/orange → halloween, fireworks/countdown → new-year, flags/patriotic → independence, pastel eggs/spring blooms → easter. Use ['none'] only when nothing fits.",
     "- seoTitle: <=60 chars, ends with ' | Aurava'.",
     "- seoDescription: <=155 chars, compelling meta description.",
     "Return ONLY the JSON object matching the schema.",

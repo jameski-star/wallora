@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Container } from "@/components/ui";
 import { JsonLd } from "@/components/json-ld";
+import { Markdown } from "@/components/markdown";
 import { getPost } from "@/lib/blog";
 import { postImageUrl } from "@/lib/cloudinary";
 import { abs } from "@/lib/seo";
@@ -57,7 +58,6 @@ export default async function BlogPostPage({ params }: { params: Params }) {
   if (!post) notFound();
 
   const cover = postImageUrl(post.coverImage, { width: 1400 });
-  const paragraphs = post.body.split(/\n{2,}/).filter(Boolean);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -107,11 +107,7 @@ export default async function BlogPostPage({ params }: { params: Params }) {
           </div>
         )}
 
-        <div className="mt-8 space-y-5 text-base leading-relaxed text-foreground/90">
-          {paragraphs.map((para, i) => (
-            <p key={i}>{para}</p>
-          ))}
-        </div>
+        <Markdown source={post.body} className="mt-8" />
 
         {post.tags.length > 0 && (
           <div className="mt-10 flex flex-wrap gap-2 border-t border-border pt-6">

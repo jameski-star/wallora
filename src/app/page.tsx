@@ -7,15 +7,15 @@ import { FadeInView } from "@/components/motion";
 import {
   listWallpapers,
   listCategories,
-  getFeaturedWallpaper,
 } from "@/lib/catalog";
+import { getFeaturedForDisplay } from "@/lib/featured";
 import { previewUrl } from "@/lib/cloudinary";
 import { CATEGORIES, SITE_TAGLINE } from "@/lib/constants";
 
 export default async function HomePage() {
   const [featured, week, popular, fresh, live, categories] = await Promise.all([
-    getFeaturedWallpaper("day"),
-    getFeaturedWallpaper("week"),
+    getFeaturedForDisplay("day"),
+    getFeaturedForDisplay("week"),
     listWallpapers({ sort: "popular", limit: 12 }),
     listWallpapers({ sort: "newest", limit: 8 }),
     listWallpapers({ kind: "live", limit: 8 }),
@@ -142,6 +142,12 @@ export default async function HomePage() {
       {/* Wallpaper of the week */}
       {week && (
         <section className="mt-16">
+          <FadeInView>
+            <SectionHeading
+              title="Wallpaper of the week"
+              subtitle="A hand-picked favourite, refreshed every week."
+            />
+          </FadeInView>
           <FeaturedHero
             slug={week.wallpaper.slug}
             title={week.title}

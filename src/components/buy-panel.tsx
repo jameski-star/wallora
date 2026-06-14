@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Check, Download, Loader2, ShoppingBag } from "lucide-react";
 import { Button } from "./ui";
 import { useCart } from "./cart";
+import { ShareButton } from "./share-button";
 import { formatPrice } from "@/lib/utils";
 
 export interface BuyTarget {
@@ -26,8 +27,14 @@ export function BuyPanel({ w }: { w: BuyTarget }) {
   if (!w.isPremium) {
     return (
       <div className="space-y-3">
-        <div className="flex items-baseline gap-2">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-2xl font-bold text-emerald-400">Free</span>
+          <ShareButton
+            slug={w.slug}
+            title={w.title}
+            device={w.device}
+            image={w.previewSrc}
+          />
         </div>
         <a
           href={`/api/download/free/${w.id}`}

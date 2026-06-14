@@ -96,3 +96,19 @@ export function probeImageUrl(publicId: string): string {
   const { id, delivery } = normalizeSource(raw);
   return `https://res.cloudinary.com/${env.cloudinaryCloud}/image/${delivery}/${id}`;
 }
+
+/**
+ * Loadable URL of the UNTRANSFORMED video, for client-side dimension probing of
+ * live wallpapers that ship without a still. Mirrors {@link probeImageUrl}: a
+ * transform-free `video/<delivery>` URL whose `videoWidth/Height` reflect the
+ * true asset resolution, with no signature needed (untransformed delivery is
+ * always allowed, even under "Strict transformations"). Returns "" for a bare
+ * public id with no Cloudinary configured.
+ */
+export function probeVideoUrl(publicId: string): string {
+  const raw = publicId.trim();
+  if (!raw) return "";
+  if (!features.cloudinary) return isAbsolute(raw) ? raw : "";
+  const { id, delivery } = normalizeSource(raw);
+  return `https://res.cloudinary.com/${env.cloudinaryCloud}/video/${delivery}/${id}`;
+}

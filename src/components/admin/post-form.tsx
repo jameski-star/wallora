@@ -26,7 +26,11 @@ export function PostForm({ post }: { post?: Post }) {
         <textarea name="excerpt" rows={2} defaultValue={p?.excerpt} className={inp} />
       </Field>
 
-      <Field label="Body" hint="Separate paragraphs with a blank line" required>
+      <Field
+        label="Body"
+        hint="Markdown supported — # headings, **bold**, *italic*, - lists, > quotes, [links](url). Separate paragraphs with a blank line."
+        required
+      >
         <textarea name="body" rows={12} required defaultValue={p?.body} className={inp} />
       </Field>
 

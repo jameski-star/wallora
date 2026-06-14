@@ -10,6 +10,7 @@ import { slugify } from "@/lib/utils";
 import { refreshWallpaperOfDay, refreshWallpaperOfWeek } from "@/lib/featured";
 import { features } from "@/lib/env";
 import { registerIpn } from "@/lib/pesapal";
+import { videoPosterUrl } from "@/lib/cloudinary";
 import { analyzeWallpaperImage, type WallpaperAnalysis } from "@/lib/gemini";
 import {
   SEED_CATEGORIES,
@@ -38,7 +39,11 @@ const wallpaperSchema = z.object({
   resolution: z.string().regex(/^\d+x\d+$/, "Use WIDTHxHEIGHT, e.g. 3840x2160"),
   ageRating: z.enum(["everyone", "13+", "16+", "18+"]),
   priceCents: z.coerce.number().int().min(0),
-  originalPublicId: z.string().min(1, "Original image is required"),
+  // Optional at the schema level: live wallpapers may omit the still and have
+  // their poster auto-derived from the video. The conditional requirement
+  // (still required for normal wallpapers) is enforced below, once we know
+  // whether `isLive` is set.
+  originalPublicId: z.string().default(""),
 });
 
 export async function saveWallpaper(formData: FormData): Promise<void> {
@@ -61,6 +66,24 @@ export async function saveWallpaper(formData: FormData): Promise<void> {
   const d = parsed.data;
   const [width, height] = d.resolution.split("x").map(Number);
 
+  const isLive = bool(formData.get("isLive"));
+  const videoPublicId =
+    String(formData.get("videoPublicId") ?? "").trim() || undefined;
+
+  // A still image is required for normal wallpapers. Live wallpapers may skip it
+  // — the poster is auto-derived from the video frame — but then they must have
+  // a video to derive it from.
+  if (!isLive && !d.originalPublicId.trim()) {
+    throw new Error("Original image is required");
+  }
+  if (isLive && !d.originalPublicId.trim() && !videoPublicId) {
+    throw new Error("Live wallpapers need a video (or a still image).");
+  }
+
+  const durationSec = isLive
+    ? Math.min(60, Math.max(1, Number(formData.get("durationSec") ?? 6) || 6))
+    : undefined;
+
   const existingId = String(formData.get("id") ?? "").trim();
   const id = existingId || `wp_${randomUUID().slice(0, 8)}`;
   const slug =
@@ -71,13 +94,6 @@ export async function saveWallpaper(formData: FormData): Promise<void> {
   const previewPublicId =
     String(formData.get("previewPublicId") ?? "").trim() || d.originalPublicId;
   const ageRating = d.ageRating;
-
-  const isLive = bool(formData.get("isLive"));
-  const videoPublicId =
-    String(formData.get("videoPublicId") ?? "").trim() || undefined;
-  const durationSec = isLive
-    ? Math.min(60, Math.max(1, Number(formData.get("durationSec") ?? 6) || 6))
-    : undefined;
 
   const wallpaper: Wallpaper = {
     id,
@@ -135,6 +151,7 @@ export type AnalyzeResult =
 export async function analyzeWallpaper(input: {
   originalPublicId: string;
   previewPublicId?: string;
+  videoPublicId?: string;
 }): Promise<AnalyzeResult> {
   await requireAdmin();
 
@@ -148,14 +165,28 @@ export async function analyzeWallpaper(input: {
   // Prefer the preview source when present (smaller), else the original.
   const source =
     (input.previewPublicId ?? "").trim() || (input.originalPublicId ?? "").trim();
-  if (!source) {
-    return { ok: false, message: "Add the Cloudinary image link first." };
+
+  // Live wallpaper with no still → analyse a SIGNED frame extracted from the
+  // video. Passed as a ready-to-fetch URL so Gemini reads the frame, not an
+  // (impossible) untransformed image delivery of a video asset.
+  const videoId = (input.videoPublicId ?? "").trim();
+  const imageUrl =
+    !source && videoId
+      ? videoPosterUrl({ videoPublicId: videoId, isPremium: false }, { width: 1200 })
+      : undefined;
+
+  if (!source && !imageUrl) {
+    return { ok: false, message: "Add the Cloudinary image or video link first." };
   }
 
   try {
     const repo = await getRepo();
     const categories = await repo.listCategories();
-    const data = await analyzeWallpaperImage({ publicId: source, categories });
+    const data = await analyzeWallpaperImage({
+      publicId: source,
+      imageUrl,
+      categories,
+    });
     return { ok: true, data };
   } catch (e) {
     return {
