@@ -10,6 +10,7 @@ import { slugify } from "@/lib/utils";
 import { refreshWallpaperOfDay, refreshWallpaperOfWeek } from "@/lib/featured";
 import { features } from "@/lib/env";
 import { registerIpn } from "@/lib/pesapal";
+import { analyzeWallpaperImage, type WallpaperAnalysis } from "@/lib/gemini";
 import {
   SEED_CATEGORIES,
   SEED_FEATURED,
@@ -120,6 +121,48 @@ export async function saveWallpaper(formData: FormData): Promise<void> {
   revalidatePath("/admin-dash/wallpapers");
   revalidatePath("/wallpapers");
   redirect("/admin-dash/wallpapers");
+}
+
+/** Result of the admin "Auto-fill from image" action (consumed in the form). */
+export type AnalyzeResult =
+  | { ok: true; data: WallpaperAnalysis }
+  | { ok: false; message: string };
+
+/**
+ * Analyse a wallpaper image with Gemini and return descriptive metadata for the
+ * admin form to pre-fill. Admin-only; never writes — the admin reviews and saves.
+ */
+export async function analyzeWallpaper(input: {
+  originalPublicId: string;
+  previewPublicId?: string;
+}): Promise<AnalyzeResult> {
+  await requireAdmin();
+
+  if (!features.gemini) {
+    return {
+      ok: false,
+      message: "Auto-fill is off — set GEMINI_API_KEY to enable it.",
+    };
+  }
+
+  // Prefer the preview source when present (smaller), else the original.
+  const source =
+    (input.previewPublicId ?? "").trim() || (input.originalPublicId ?? "").trim();
+  if (!source) {
+    return { ok: false, message: "Add the Cloudinary image link first." };
+  }
+
+  try {
+    const repo = await getRepo();
+    const categories = await repo.listCategories();
+    const data = await analyzeWallpaperImage({ publicId: source, categories });
+    return { ok: true, data };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Analysis failed.",
+    };
+  }
 }
 
 export async function deleteWallpaper(formData: FormData): Promise<void> {

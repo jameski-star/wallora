@@ -1,18 +1,39 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Check as CheckIcon, AlertCircle } from "lucide-react";
-import { saveWallpaper } from "@/app/admin-dash/actions";
+import { Loader2, Check as CheckIcon, AlertCircle, Sparkles } from "lucide-react";
+import { saveWallpaper, analyzeWallpaper } from "@/app/admin-dash/actions";
 import { Button } from "@/components/ui";
 import { DEVICE_TYPES, AGE_RATINGS } from "@/lib/constants";
 import { probeImageUrl } from "@/lib/cloudinary-url";
-import type { Category, Wallpaper } from "@/lib/types";
+import type { AgeRating, Category, DeviceType, Wallpaper } from "@/lib/types";
 
 type ProbeState =
   | { status: "idle" }
   | { status: "loading" }
   | { status: "done"; width: number; height: number }
   | { status: "error"; message: string };
+
+type AutoState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "done" }
+  | { status: "error"; message: string };
+
+/**
+ * Pick a device from the image's aspect ratio. This is deterministic arithmetic,
+ * so we derive it locally rather than asking the model:
+ *   - portrait  → phone
+ *   - wide landscape (≥16:10) → desktop
+ *   - in between (squarish / 4:3) → tablet
+ */
+function deviceFromDimensions(width: number, height: number): DeviceType {
+  if (!width || !height) return "desktop";
+  const ratio = width / height;
+  if (ratio < 0.9) return "phone";
+  if (ratio >= 1.6) return "desktop";
+  return "tablet";
+}
 
 /** Create/edit form. Posts directly to the `saveWallpaper` server action. */
 export function WallpaperForm({
@@ -23,12 +44,33 @@ export function WallpaperForm({
   categories: Category[];
 }) {
   const w = wallpaper;
+
+  // Controlled fields — these are the ones "Auto-fill from image" can populate.
+  const [originalPublicId, setOriginalPublicId] = useState(w?.originalPublicId ?? "");
+  const [previewPublicId, setPreviewPublicId] = useState(w?.previewPublicId ?? "");
+  const [title, setTitle] = useState(w?.title ?? "");
+  const [description, setDescription] = useState(w?.description ?? "");
+  const [tags, setTags] = useState(w?.tags.join(", ") ?? "");
+  const [categorySlug, setCategorySlug] = useState(
+    w?.categorySlug ?? categories[0]?.slug ?? "",
+  );
+  const [device, setDevice] = useState<DeviceType>(w?.device ?? "desktop");
+  const [ageRating, setAgeRating] = useState<AgeRating>(w?.ageRating ?? "everyone");
+  const [holidayTags, setHolidayTags] = useState(
+    w?.holidayTags.filter((h) => h !== "none").join(", ") ?? "",
+  );
+  const [seoTitle, setSeoTitle] = useState(w?.seoTitle ?? "");
+  const [seoDescription, setSeoDescription] = useState(w?.seoDescription ?? "");
+  const [isMature, setIsMature] = useState(w?.isMature ?? false);
+
   const [resolution, setResolution] = useState(w?.resolution ?? "3840x2160");
   const [probe, setProbe] = useState<ProbeState>({ status: "idle" });
+  const [auto, setAuto] = useState<AutoState>({ status: "idle" });
 
   /**
    * Load the original off-screen to read its natural pixel dimensions, then set
-   * the resolution field automatically. Runs when the image link loses focus.
+   * the resolution field (and infer the device) automatically. Runs when the
+   * image link loses focus.
    */
   function detectDimensions(publicId: string) {
     const url = probeImageUrl(publicId.trim());
@@ -47,12 +89,49 @@ export function WallpaperForm({
         return;
       }
       setResolution(`${width}x${height}`);
+      setDevice(deviceFromDimensions(width, height));
       setProbe({ status: "done", width, height });
     };
     img.onerror = () =>
       setProbe({ status: "error", message: "Could not load image from link" });
     img.src = url;
   }
+
+  /**
+   * Ask Gemini to read the image and fill in the descriptive fields. Explicit,
+   * button-triggered, and non-destructive of the admin's manual choices around
+   * price/premium/featured — those aren't touched.
+   */
+  async function autofill() {
+    if (!originalPublicId.trim() && !previewPublicId.trim()) {
+      setAuto({ status: "error", message: "Add the image link first." });
+      return;
+    }
+    setAuto({ status: "loading" });
+    const result = await analyzeWallpaper({
+      originalPublicId: originalPublicId.trim(),
+      previewPublicId: previewPublicId.trim() || undefined,
+    });
+    if (!result.ok) {
+      setAuto({ status: "error", message: result.message });
+      return;
+    }
+    const d = result.data;
+    setTitle(d.title);
+    setDescription(d.description);
+    setTags(d.tags.join(", "));
+    setCategorySlug(d.categorySlug);
+    setAgeRating(d.ageRating);
+    setIsMature(d.isMature);
+    setHolidayTags(d.holidayTags.filter((h) => h !== "none").join(", "));
+    setSeoTitle(d.seoTitle);
+    setSeoDescription(d.seoDescription);
+    setAuto({ status: "done" });
+  }
+
+  const canAutofill =
+    Boolean(originalPublicId.trim() || previewPublicId.trim()) &&
+    auto.status !== "loading";
 
   return (
     <form action={saveWallpaper} className="space-y-5">
@@ -62,7 +141,13 @@ export function WallpaperForm({
 
       <Row>
         <Field label="Title" required>
-          <input name="title" required defaultValue={w?.title} className={inp} />
+          <input
+            name="title"
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className={inp}
+          />
         </Field>
         <Field label="Slug" hint="Auto-generated if blank">
           <input name="slug" defaultValue={w?.slug} placeholder="auto" className={inp} />
@@ -70,7 +155,13 @@ export function WallpaperForm({
       </Row>
 
       <Field label="Description">
-        <textarea name="description" rows={3} defaultValue={w?.description} className={inp} />
+        <textarea
+          name="description"
+          rows={3}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className={inp}
+        />
       </Field>
 
       <Row>
@@ -78,15 +169,45 @@ export function WallpaperForm({
           <input
             name="originalPublicId"
             required
-            defaultValue={w?.originalPublicId}
+            value={originalPublicId}
+            onChange={(e) => setOriginalPublicId(e.target.value)}
             onBlur={(e) => detectDimensions(e.target.value)}
             className={inp}
           />
         </Field>
         <Field label="Preview public id" hint="Defaults to original; premium previews are resolution-capped">
-          <input name="previewPublicId" defaultValue={w?.previewPublicId} className={inp} />
+          <input
+            name="previewPublicId"
+            value={previewPublicId}
+            onChange={(e) => setPreviewPublicId(e.target.value)}
+            className={inp}
+          />
         </Field>
       </Row>
+
+      {/* Auto-fill from image — enabled once a Cloudinary link is present. */}
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-surface/50 p-3">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={autofill}
+          disabled={!canAutofill}
+        >
+          {auto.status === "loading" ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <Sparkles size={16} />
+          )}
+          {auto.status === "loading" ? "Analysing image…" : "Auto-fill from image"}
+        </Button>
+        <span className="text-xs text-muted">
+          {auto.status === "done"
+            ? "Filled title, description, tags, category, age rating, holidays & SEO — review before saving."
+            : auto.status === "error"
+              ? auto.message
+              : "Reads the image with Gemini and fills the descriptive fields."}
+        </span>
+      </div>
 
       <Field label="Premium original storage path (private Supabase bucket)" hint="Premium only — the paid download. Defaults to originals/<id>.jpg">
         <input name="originalStoragePath" defaultValue={w?.originalStoragePath} className={inp} />
@@ -103,14 +224,24 @@ export function WallpaperForm({
 
       <Row>
         <Field label="Category" required>
-          <select name="categorySlug" defaultValue={w?.categorySlug ?? categories[0]?.slug} className={inp}>
+          <select
+            name="categorySlug"
+            value={categorySlug}
+            onChange={(e) => setCategorySlug(e.target.value)}
+            className={inp}
+          >
             {categories.map((c) => (
               <option key={c.slug} value={c.slug}>{c.name}</option>
             ))}
           </select>
         </Field>
         <Field label="Device" required>
-          <select name="device" defaultValue={w?.device ?? "desktop"} className={inp}>
+          <select
+            name="device"
+            value={device}
+            onChange={(e) => setDevice(e.target.value as DeviceType)}
+            className={inp}
+          >
             {DEVICE_TYPES.map((d) => (
               <option key={d.value} value={d.value}>{d.label}</option>
             ))}
@@ -154,12 +285,23 @@ export function WallpaperForm({
       </Row>
 
       <Field label="Tags" hint="Comma-separated">
-        <input name="tags" defaultValue={w?.tags.join(", ")} placeholder="nature, minimal, dark" className={inp} />
+        <input
+          name="tags"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder="nature, minimal, dark"
+          className={inp}
+        />
       </Field>
 
       <Row>
         <Field label="Age rating">
-          <select name="ageRating" defaultValue={w?.ageRating ?? "everyone"} className={inp}>
+          <select
+            name="ageRating"
+            value={ageRating}
+            onChange={(e) => setAgeRating(e.target.value as AgeRating)}
+            className={inp}
+          >
             {AGE_RATINGS.map((r) => (
               <option key={r} value={r}>{r}</option>
             ))}
@@ -169,23 +311,47 @@ export function WallpaperForm({
           <input name="priceCents" type="number" min={0} defaultValue={w?.priceCents ?? 0} className={inp} />
         </Field>
         <Field label="Holiday tags" hint="Comma-separated; e.g. christmas">
-          <input name="holidayTags" defaultValue={w?.holidayTags.filter((h) => h !== "none").join(", ")} className={inp} />
+          <input
+            name="holidayTags"
+            value={holidayTags}
+            onChange={(e) => setHolidayTags(e.target.value)}
+            className={inp}
+          />
         </Field>
       </Row>
 
       <Row>
         <Field label="SEO title">
-          <input name="seoTitle" defaultValue={w?.seoTitle} className={inp} />
+          <input
+            name="seoTitle"
+            value={seoTitle}
+            onChange={(e) => setSeoTitle(e.target.value)}
+            className={inp}
+          />
         </Field>
         <Field label="SEO description">
-          <input name="seoDescription" defaultValue={w?.seoDescription} className={inp} />
+          <input
+            name="seoDescription"
+            value={seoDescription}
+            onChange={(e) => setSeoDescription(e.target.value)}
+            className={inp}
+          />
         </Field>
       </Row>
 
       <div className="flex flex-wrap gap-5">
         <Check name="isLive" label="Live wallpaper (video)" defaultChecked={w?.kind === "live"} />
         <Check name="isPremium" label="Premium" defaultChecked={w?.isPremium} />
-        <Check name="isMature" label="Mature (18+)" defaultChecked={w?.isMature} />
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="isMature"
+            checked={isMature}
+            onChange={(e) => setIsMature(e.target.checked)}
+            className="size-4 accent-[var(--accent)]"
+          />
+          Mature (18+)
+        </label>
         <Check name="isFeatured" label="Featured" defaultChecked={w?.isFeatured} />
       </div>
 

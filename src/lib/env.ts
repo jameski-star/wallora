@@ -39,6 +39,13 @@ export const env = {
   // ones are always built in Server Components).
   cloudinaryApiSecret: pick("CLOUDINARY_API_SECRET"),
 
+  // Google Gemini — powers the admin "Auto-fill from image" feature. Server-only
+  // (NOT NEXT_PUBLIC): the key is never shipped to the client; analysis runs in a
+  // Server Action. Grab a free key at https://aistudio.google.com/apikey.
+  geminiApiKey: pick("GEMINI_API_KEY"),
+  // Overridable so you can move to a newer/cheaper flash model without a deploy.
+  geminiModel: pick("GEMINI_MODEL") ?? "gemini-2.5-flash",
+
   // PesaPal v3
   pesapalConsumerKey: pick("PESAPAL_CONSUMER_KEY"),
   pesapalConsumerSecret: pick("PESAPAL_CONSUMER_SECRET"),
@@ -70,6 +77,8 @@ export const features = {
    * signatures are simply ignored, so turning this on is safe at any time.
    */
   cloudinarySigned: Boolean(env.cloudinaryCloud && env.cloudinaryApiSecret),
+  /** Gemini-powered admin auto-fill from an uploaded image. */
+  gemini: Boolean(env.geminiApiKey),
   /** PesaPal live payment processing. */
   pesapal: Boolean(env.pesapalConsumerKey && env.pesapalConsumerSecret),
   /** Resend transactional email. */
