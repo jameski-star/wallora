@@ -20,19 +20,41 @@ export const baseMetadata: Metadata = {
   description:
     "Aurava is a premium wallpaper marketplace. Browse and download stunning 4K & HD wallpapers for desktop, phone and tablet.",
   keywords: ["wallpapers", "4k wallpapers", "hd wallpapers", "desktop", "phone", "premium"],
+  // Default canonical for the home route. Sub-pages override this in their own
+  // generateMetadata (e.g. wallpaperMetadata, the /wallpapers and /blog pages).
+  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
     url: SITE_URL,
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description: "Premium 4K & HD wallpapers for every device.",
+    // og:image is supplied automatically by the app/opengraph-image.tsx file
+    // convention (and per-wallpaper/per-post pages set their own image).
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE_NAME} — ${SITE_TAGLINE}`,
     description: "Premium 4K & HD wallpapers for every device.",
+    // twitter:image likewise comes from app/twitter-image.tsx.
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    // Let Google show full-size image thumbnails and untruncated snippets —
+    // essential for an image-first catalog to win Google Images + rich results.
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  // Emits <meta name="google-site-verification"> only when the token is set.
+  ...(env.googleSiteVerification
+    ? { verification: { google: env.googleSiteVerification } }
+    : {}),
 };
 
 /** Per-wallpaper metadata (canonical, OG image, Twitter card). */
@@ -97,6 +119,27 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
       name: it.name,
       item: abs(it.path),
     })),
+  };
+}
+
+/**
+ * Organization JSON-LD — establishes the brand entity for Google's knowledge
+ * graph and makes the logo eligible to appear beside results. Add public
+ * profile URLs to `sameAs` (X, Instagram, Pinterest, etc.) as they go live;
+ * `sameAs` is the strongest signal tying those profiles to this brand.
+ */
+export function organizationJsonLd() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: abs("/icon.svg"),
+    description:
+      "Aurava is a premium wallpaper marketplace offering curated 4K & HD wallpapers for desktop, phone and tablet.",
+    // TODO: add brand profile URLs once live, e.g.
+    // sameAs: ["https://x.com/...", "https://instagram.com/...", "https://pinterest.com/..."],
+    sameAs: [] as string[],
   };
 }
 

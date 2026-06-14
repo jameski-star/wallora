@@ -24,6 +24,16 @@ export default async function HomePage() {
 
   return (
     <Container className="py-8 sm:py-12">
+      {/*
+        The page's single, keyword-bearing <h1>. Visually hidden because the
+        visual focus is the featured-wallpaper hero (whose title is a wallpaper
+        *name*, rendered as <h2>), but search engines fully honour an sr-only
+        h1 — it states what this page is actually about.
+      */}
+      <h1 className="sr-only">
+        Premium 4K &amp; HD Wallpapers — Download for Desktop, Phone &amp; Tablet
+      </h1>
+
       {/* Hero */}
       {featured ? (
         <FeaturedHero
@@ -37,7 +47,8 @@ export default async function HomePage() {
         />
       ) : (
         <div className="rounded-card border border-border bg-surface p-12 text-center">
-          <h1 className="text-4xl font-bold">Aurava</h1>
+          {/* Not an <h1>: the page-level sr-only <h1> above owns that role. */}
+          <p className="text-4xl font-bold">Aurava</p>
           <p className="mt-2 text-muted">{SITE_TAGLINE}</p>
           <ButtonLink href="/wallpapers" className="mt-6">Browse wallpapers</ButtonLink>
         </div>

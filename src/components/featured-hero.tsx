@@ -13,6 +13,10 @@ export function FeaturedHero({
   previewSrc,
   width,
   height,
+  // The hero title is a wallpaper *name*, not the page's topic, so it defaults
+  // to <h2>. The page supplies its own keyword-bearing <h1> for SEO, and using
+  // multiple heroes on one page no longer produces duplicate <h1>s.
+  titleAs: TitleTag = "h2",
 }: {
   slug: string;
   title: string;
@@ -21,6 +25,7 @@ export function FeaturedHero({
   previewSrc: string;
   width: number;
   height: number;
+  titleAs?: "h1" | "h2";
 }) {
   return (
     <section className="relative overflow-hidden rounded-card border border-border bg-surface">
@@ -34,7 +39,7 @@ export function FeaturedHero({
           <span className="mb-4 inline-flex w-fit items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-medium text-accent">
             <Sparkles size={13} /> {caption}
           </span>
-          <h1 className="text-balance text-4xl font-bold tracking-tight sm:text-5xl">{title}</h1>
+          <TitleTag className="text-balance text-4xl font-bold tracking-tight sm:text-5xl">{title}</TitleTag>
           <p className="mt-4 max-w-md text-pretty text-muted">{description}</p>
           <Link
             href={`/wallpapers/${slug}`}

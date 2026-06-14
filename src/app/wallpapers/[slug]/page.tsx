@@ -90,7 +90,7 @@ export default async function SlugPage({ params }: { params: Params }) {
       <JsonLd
         data={breadcrumbJsonLd([
           { name: "Wallpapers", path: "/wallpapers" },
-          { name: w.categorySlug, path: `/wallpapers/${w.categorySlug}` },
+          { name: categoryDisplayName(w.categorySlug), path: `/wallpapers/${w.categorySlug}` },
           { name: w.title, path: `/wallpapers/${w.slug}` },
         ])}
       />
@@ -200,6 +200,20 @@ export default async function SlugPage({ params }: { params: Params }) {
       )}
     </Container>
   );
+}
+
+/**
+ * Human-readable category name for breadcrumbs / structured data. Prefers the
+ * canonical name from CATEGORIES; falls back to title-casing the slug so
+ * admin-created categories still read cleanly (e.g. "anime-art" → "Anime Art").
+ */
+function categoryDisplayName(slug: string): string {
+  const known = CATEGORIES.find((c) => c.slug === slug);
+  if (known) return known.name;
+  return slug
+    .split("-")
+    .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w))
+    .join(" ");
 }
 
 function Spec({

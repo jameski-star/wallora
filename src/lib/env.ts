@@ -19,6 +19,12 @@ export const env = {
   siteUrl:
     pick("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000",
 
+  // Google Search Console verification token. When set, `baseMetadata` emits the
+  // <meta name="google-site-verification"> tag so Google can verify ownership
+  // and index the site. Copy the token from Search Console → Settings →
+  // Ownership verification → "HTML tag" (the content="..." value only).
+  googleSiteVerification: pick("NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION"),
+
   // Supabase
   supabaseUrl: pick("NEXT_PUBLIC_SUPABASE_URL"),
   supabaseAnonKey: pick("NEXT_PUBLIC_SUPABASE_ANON_KEY"),

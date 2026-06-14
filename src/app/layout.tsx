@@ -1,6 +1,7 @@
+import type { Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { baseMetadata, websiteJsonLd } from "@/lib/seo";
+import { baseMetadata, websiteJsonLd, organizationJsonLd } from "@/lib/seo";
 import { getViewer } from "@/lib/auth";
 import { CartProvider } from "@/components/cart";
 import { Navbar } from "@/components/navbar";
@@ -12,6 +13,15 @@ const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata = baseMetadata;
+
+// Tints the mobile browser chrome (address bar) per active color scheme — the
+// site ships dark by default with an optional light theme.
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+  ],
+};
 
 export default async function RootLayout({
   children,
@@ -36,6 +46,7 @@ export default async function RootLayout({
       </head>
       <body className="flex min-h-full flex-col" suppressHydrationWarning>
         <JsonLd data={websiteJsonLd()} />
+        <JsonLd data={organizationJsonLd()} />
         <CartProvider>
           <Navbar
             displayName={viewer.profile?.displayName ?? null}
