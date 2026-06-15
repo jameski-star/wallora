@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Download, Loader2, ShoppingBag } from "lucide-react";
+import { Check, Download, Loader2, ShieldCheck, ShoppingBag } from "lucide-react";
 import { Button } from "./ui";
 import { useCart } from "./cart";
+import { useMockupOptional } from "./mockup-viewer";
 import { ShareButton } from "./share-button";
 import { formatPrice } from "@/lib/utils";
 
@@ -21,6 +22,7 @@ export interface BuyTarget {
 export function BuyPanel({ w }: { w: BuyTarget }) {
   const cart = useCart();
   const router = useRouter();
+  const mockup = useMockupOptional();
   const [busy, setBusy] = useState(false);
   const inCart = cart.has(w.id);
 
@@ -36,18 +38,30 @@ export function BuyPanel({ w }: { w: BuyTarget }) {
             image={w.previewSrc}
           />
         </div>
-        <a
-          href={`/api/download/free/${w.id}`}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-accent px-7 text-base font-semibold text-accent-foreground transition hover:opacity-90"
-        >
-          <Download size={18} /> Download free
-        </a>
+        {mockup ? (
+          <Button size="lg" className="w-full" onClick={mockup.open}>
+            <Download size={18} /> Download free
+          </Button>
+        ) : (
+          <a
+            href={`/api/download/free/${w.id}`}
+            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-accent px-7 text-base font-semibold text-accent-foreground transition hover:opacity-90"
+          >
+            <Download size={18} /> Download free
+          </a>
+        )}
         <p className="text-xs text-muted">Free for personal use. No account required.</p>
       </div>
     );
   }
 
   function buyNow() {
+    // With a studio viewer present, both CTAs open the realistic preview first;
+    // the modal carries the real checkout / cart actions.
+    if (mockup) {
+      mockup.open();
+      return;
+    }
     if (!inCart)
       cart.add({
         wallpaperId: w.id,
@@ -77,22 +91,28 @@ export function BuyPanel({ w }: { w: BuyTarget }) {
         variant="secondary"
         size="lg"
         className="w-full"
-        onClick={() =>
-          inCart
-            ? cart.remove(w.id)
-            : cart.add({
-                wallpaperId: w.id,
-                slug: w.slug,
-                title: w.title,
-                priceCents: w.priceCents,
-                previewUrl: w.previewSrc,
-                device: w.device,
-              })
-        }
+        onClick={() => {
+          if (mockup) return mockup.open();
+          if (inCart) return cart.remove(w.id);
+          cart.add({
+            wallpaperId: w.id,
+            slug: w.slug,
+            title: w.title,
+            priceCents: w.priceCents,
+            previewUrl: w.previewSrc,
+            device: w.device,
+          });
+        }}
       >
         {inCart ? <Check size={18} /> : null}
         {inCart ? "In cart" : "Add to cart"}
       </Button>
+
+      <p className="flex items-start gap-1.5 text-xs text-muted">
+        <ShieldCheck size={14} className="mt-px shrink-0 text-emerald-400" />
+        The “Aurava” watermark is on this preview only — your download is
+        full-resolution and watermark-free.
+      </p>
 
       <p className="text-xs text-muted">
         Secure checkout via PesaPal. Download link delivered by email and in your account.

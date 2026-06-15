@@ -3,7 +3,10 @@ import Link from "next/link";
 import { CheckCircle2, Clock, XCircle, Download } from "lucide-react";
 import { Container, ButtonLink } from "@/components/ui";
 import { ClearCartOnMount, EscapeIframe } from "@/components/checkout-client";
+import { DeviceMockup } from "@/components/device-mockup";
 import { fulfillByMerchantRef } from "@/lib/orders";
+import { getWallpapersByIds } from "@/lib/catalog";
+import { previewUrl } from "@/lib/cloudinary";
 import { getViewer } from "@/lib/auth";
 import { formatPrice } from "@/lib/utils";
 
@@ -37,6 +40,14 @@ export default async function CallbackPage({
 
   const viewer = await getViewer();
 
+  // For a paid order, resolve the purchased wallpapers so each line can render
+  // inside its device mockup (preview + device aren't stored on OrderItem).
+  const wallpapers =
+    order && status === "paid"
+      ? await getWallpapersByIds(order.items.map((i) => i.wallpaperId))
+      : [];
+  const byId = new Map(wallpapers.map((w) => [w.id, w]));
+
   return (
     <Container className="flex min-h-[60vh] items-center justify-center py-12">
       {/* If this page rendered inside the payment popup iframe, break out to
@@ -53,25 +64,37 @@ export default async function CallbackPage({
             </p>
 
             <ul className="mt-6 divide-y divide-border text-left">
-              {order.items.map((it) => (
-                <li
-                  key={it.wallpaperId}
-                  className="flex items-center justify-between gap-3 py-3"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate font-medium">{it.title}</p>
-                    <p className="text-xs text-muted">
-                      {formatPrice(it.priceCents, order.currency)}
-                    </p>
-                  </div>
-                  <a
-                    href={`/api/download/receipt/${order.id}?wp=${it.wallpaperId}&t=${encodeURIComponent(order.pesapalMerchantRef)}`}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:opacity-90"
+              {order.items.map((it) => {
+                const w = byId.get(it.wallpaperId);
+                return (
+                  <li
+                    key={it.wallpaperId}
+                    className="flex items-center gap-3 py-3"
                   >
-                    <Download size={15} /> Download
-                  </a>
-                </li>
-              ))}
+                    {w && (
+                      <div className="w-16 shrink-0">
+                        <DeviceMockup
+                          device={w.device}
+                          src={previewUrl(w, { width: 400 })}
+                          alt={it.title}
+                        />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{it.title}</p>
+                      <p className="text-xs text-muted">
+                        {formatPrice(it.priceCents, order.currency)}
+                      </p>
+                    </div>
+                    <a
+                      href={`/api/download/receipt/${order.id}?wp=${it.wallpaperId}&t=${encodeURIComponent(order.pesapalMerchantRef)}`}
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                    >
+                      <Download size={15} /> Download
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
 
             <div className="mt-6 rounded-lg border border-border bg-surface-2/40 p-4 text-sm text-muted">

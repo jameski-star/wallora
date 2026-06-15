@@ -14,6 +14,15 @@ export type HolidayType =
   | "new-year"
   | "halloween"
   | "independence"
+  | "thanksgiving"
+  | "st-patricks"
+  | "diwali"
+  | "lunar-new-year"
+  | "eid"
+  | "hanukkah"
+  | "mothers-day"
+  | "fathers-day"
+  | "pride"
   | "none";
 
 export interface Category {

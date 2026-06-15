@@ -30,12 +30,23 @@ export async function sendReceiptAndDownloads(
 
   const { Resend } = await import("resend");
   const resend = new Resend(env.resendKey);
-  await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: env.emailFrom,
     to: order.email,
     subject,
     html,
   });
+
+  // The Resend SDK resolves (it does NOT throw) on API errors — the failure is
+  // in `error`. Throw so the caller logs it instead of silently dropping the
+  // receipt. The most common cause is sending `from` an unverified domain.
+  if (error) {
+    throw new Error(
+      `Resend rejected email to ${order.email} (from ${env.emailFrom}): ` +
+        `${error.name} — ${error.message}`,
+    );
+  }
+  console.info(`[email] receipt sent to ${order.email} (id ${data?.id})`);
 }
 
 function receiptHtml(order: Order, links: DownloadLink[]): string {

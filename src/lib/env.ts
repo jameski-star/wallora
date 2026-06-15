@@ -56,7 +56,9 @@ export const env = {
 
   // Resend
   resendKey: pick("RESEND_API_KEY"),
-  emailFrom: pick("EMAIL_FROM") ?? "Aurava <noreply@aurava.app>",
+  // Must be an address on a domain VERIFIED in your Resend dashboard, or every
+  // send is rejected with a 403. Override per-deploy via EMAIL_FROM.
+  emailFrom: pick("EMAIL_FROM") ?? "Aurava <noreply@auravaw.tech>",
 
   // Cron auth
   cronSecret: pick("CRON_SECRET"),

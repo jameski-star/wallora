@@ -71,22 +71,45 @@ export const POPULAR_TAGS = [
   "christmas", "easter", "valentines", "halloween", "new-year",
 ];
 
-/** Map Nager.Date holiday names → our holiday tags. */
+/** Map Nager.Date holiday names → our holiday tags. Order matters: the first
+ *  match wins, so more-specific names come before broader ones (e.g.
+ *  "lunar-new-year" must precede "new-year", or "Lunar New Year" would match
+ *  the latter). The drifting lunar holidays only resolve here when
+ *  HOLIDAY_COUNTRY is set to a region whose Nager calendar lists them. */
 export const HOLIDAY_KEYWORDS: { match: RegExp; type: HolidayType }[] = [
   { match: /christmas/i, type: "christmas" },
   { match: /easter/i, type: "easter" },
   { match: /valentine/i, type: "valentines" },
-  { match: /new year/i, type: "new-year" },
   { match: /halloween/i, type: "halloween" },
   { match: /independence/i, type: "independence" },
+  { match: /thanksgiving/i, type: "thanksgiving" },
+  { match: /(saint|st\.?)\s*patrick/i, type: "st-patricks" },
+  { match: /diwali|deepavali/i, type: "diwali" },
+  { match: /lunar new year|chinese new year/i, type: "lunar-new-year" },
+  { match: /\beid\b/i, type: "eid" },
+  { match: /hanukk?ah|chanukah/i, type: "hanukkah" },
+  { match: /mother'?s day/i, type: "mothers-day" },
+  { match: /father'?s day/i, type: "fathers-day" },
+  { match: /pride/i, type: "pride" },
+  { match: /new year/i, type: "new-year" },
 ];
 
-/** Weekly seasonal windows (month is 1-based) → holiday tag. */
+/** Weekly seasonal windows (month is 1-based) → holiday tag. First match wins,
+ *  so windows must not overlap. Only fixed-/stable-date holidays appear here;
+ *  drifting lunar ones (diwali, lunar-new-year, eid, hanukkah) shift too far
+ *  year-to-year for a static window, so they're omitted from automatic
+ *  rotation — they still work as Gemini tags and manual featured pins. */
 export const SEASONAL_WEEKS: { type: HolidayType; from: [number, number]; to: [number, number] }[] = [
   { type: "new-year", from: [12, 27], to: [1, 5] },
   { type: "valentines", from: [2, 8], to: [2, 14] },
+  { type: "st-patricks", from: [3, 14], to: [3, 17] },
   { type: "easter", from: [3, 25], to: [4, 25] },
+  { type: "mothers-day", from: [5, 8], to: [5, 14] }, // 2nd Sunday of May
+  { type: "pride", from: [6, 1], to: [6, 15] },
+  { type: "fathers-day", from: [6, 16], to: [6, 21] }, // 3rd Sunday of June
+  { type: "independence", from: [7, 1], to: [7, 4] },
   { type: "halloween", from: [10, 25], to: [10, 31] },
+  { type: "thanksgiving", from: [11, 22], to: [11, 28] }, // 4th Thursday of Nov
   { type: "christmas", from: [12, 18], to: [12, 26] },
 ];
 
@@ -97,6 +120,15 @@ export const HOLIDAY_LABELS: Record<HolidayType, string> = {
   "new-year": "New Year",
   halloween: "Halloween",
   independence: "Independence Day",
+  thanksgiving: "Thanksgiving",
+  "st-patricks": "St. Patrick's Day",
+  diwali: "Diwali",
+  "lunar-new-year": "Lunar New Year",
+  eid: "Eid",
+  hanukkah: "Hanukkah",
+  "mothers-day": "Mother's Day",
+  "fathers-day": "Father's Day",
+  pride: "Pride",
   none: "Featured",
 };
 

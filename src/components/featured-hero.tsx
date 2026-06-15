@@ -27,6 +27,11 @@ export function FeaturedHero({
   height: number;
   titleAs?: "h1" | "h2";
 }) {
+  // Portrait (mobile) wallpapers are taller than wide. In the hero's landscape
+  // box, cropping to fill would hide most of the art, so we show the WHOLE image
+  // (contain) and fill the side bands with a blurred copy of itself.
+  const isPortrait = height > width;
+
   return (
     <section className="relative overflow-hidden rounded-card border border-border bg-surface">
       <div className="grid items-stretch gap-0 lg:grid-cols-2">
@@ -63,8 +68,11 @@ export function FeaturedHero({
               width={width}
               height={height}
               priority
+              fill
+              fit={isPortrait ? "contain" : "cover"}
+              blurBackdrop={isPortrait}
               sizes="(max-width:1024px) 100vw, 50vw"
-              className="h-full"
+              className="h-full w-full"
             />
           </Link>
         </motion.div>

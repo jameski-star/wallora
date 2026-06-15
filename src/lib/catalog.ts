@@ -55,3 +55,10 @@ export async function getFeaturedWallpaper(
 export async function listCategories() {
   return (await getRepo()).listCategories();
 }
+
+/** Fetch multiple wallpapers by id (for order/receipt rendering). No age-gate:
+ *  these are items the viewer has already purchased. */
+export async function getWallpapersByIds(ids: string[]): Promise<Wallpaper[]> {
+  if (ids.length === 0) return [];
+  return (await getRepo()).getWallpapersByIds(ids);
+}

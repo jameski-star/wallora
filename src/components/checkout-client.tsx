@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, Lock, ShieldCheck, X } from "lucide-react";
 import { Button } from "./ui";
 import { useCart } from "./cart";
+import { DeviceMockup } from "./device-mockup";
 import { beginCheckout } from "@/app/checkout/actions";
 import { formatPrice } from "@/lib/utils";
 
@@ -87,18 +88,28 @@ export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
 
       <aside className="h-fit rounded-card border border-border bg-surface p-6">
         <h2 className="text-lg font-semibold">Order summary</h2>
-        <ul className="mt-4 divide-y divide-border">
+        <ul className="mt-4 space-y-4">
           {cart.lines.map((l) => (
-            <li key={l.wallpaperId} className="flex justify-between gap-3 py-2 text-sm">
-              <span className="truncate">{l.title}</span>
-              <span className="shrink-0 font-medium">{formatPrice(l.priceCents)}</span>
+            <li key={l.wallpaperId} className="flex items-center gap-4">
+              <div className="w-24 shrink-0">
+                <DeviceMockup device={l.device} src={l.previewUrl} alt={l.title} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{l.title}</p>
+                <p className="text-xs capitalize text-muted">{l.device}</p>
+              </div>
+              <span className="shrink-0 text-sm font-medium">{formatPrice(l.priceCents)}</span>
             </li>
           ))}
         </ul>
-        <div className="mt-3 flex justify-between border-t border-border pt-3 font-semibold">
+        <div className="mt-4 flex justify-between border-t border-border pt-3 font-semibold">
           <span>Total</span>
           <span>{formatPrice(cart.totalCents)}</span>
         </div>
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
+          <ShieldCheck size={14} className="shrink-0 text-emerald-400" />
+          Downloads are full-resolution and 100% watermark-free.
+        </p>
       </aside>
 
       {payUrl && (

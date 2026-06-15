@@ -24,6 +24,8 @@ export function ProtectedImage({
   placeholder,
   fill = false,
   contain = false,
+  fit = "cover",
+  blurBackdrop = false,
 }: {
   src: string;
   alt: string;
@@ -33,7 +35,7 @@ export function ProtectedImage({
   sizes?: string;
   priority?: boolean;
   placeholder?: string;
-  /** Fill the parent box (object-cover) instead of using the intrinsic ratio. */
+  /** Fill the parent box instead of using the intrinsic ratio. */
   fill?: boolean;
   /**
    * Fit the WHOLE image within the viewport (object-contain, height-capped) so
@@ -41,8 +43,21 @@ export function ProtectedImage({
    * detail view.
    */
   contain?: boolean;
+  /**
+   * How a `fill` image sits in its box: "cover" crops to fill (default),
+   * "contain" shows the whole image (letterboxed). Ignored unless `fill`.
+   */
+  fit?: "cover" | "contain";
+  /**
+   * Paint a blurred, zoomed copy of the same image behind a `fit="contain"`
+   * image so the empty letterbox bands are filled instead of left blank — lets
+   * a portrait wallpaper sit fully visible in a wider box. Ignored unless
+   * `fill` and `fit === "contain"`.
+   */
+  blurBackdrop?: boolean;
 }) {
   const [loaded, setLoaded] = useState(false);
+  const showBackdrop = fill && fit === "contain" && blurBackdrop;
 
   return (
     <div
@@ -56,6 +71,21 @@ export function ProtectedImage({
       {!loaded && (
         <div className="absolute inset-0 skeleton" aria-hidden />
       )}
+      {showBackdrop && (
+        <Image
+          src={src}
+          alt=""
+          aria-hidden
+          fill
+          sizes={sizes ?? "100vw"}
+          quality={20}
+          draggable={false}
+          className={cn(
+            "scale-110 object-cover blur-2xl transition-opacity duration-500",
+            loaded ? "opacity-100" : "opacity-0",
+          )}
+        />
+      )}
       <Image
         src={src}
         alt={alt}
@@ -68,8 +98,9 @@ export function ProtectedImage({
         placeholder={placeholder ? "blur" : "empty"}
         blurDataURL={placeholder}
         className={cn(
-          "transition-opacity duration-500",
-          fill && "h-full w-full object-cover",
+          "relative transition-opacity duration-500",
+          fill && fit === "cover" && "h-full w-full object-cover",
+          fill && fit === "contain" && "h-full w-full object-contain",
           contain && "h-auto max-h-[80svh] w-auto max-w-full object-contain",
           !fill && !contain && "h-auto w-full object-cover",
           loaded ? "opacity-100" : "opacity-0",

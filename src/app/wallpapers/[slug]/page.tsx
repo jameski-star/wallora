@@ -6,6 +6,7 @@ import { Container, SectionHeading, Badge } from "@/components/ui";
 import { ProtectedImage } from "@/components/protected-image";
 import { LiveThumb } from "@/components/live-thumb";
 import { BuyPanel } from "@/components/buy-panel";
+import { MockupViewer, MockupTrigger } from "@/components/mockup-viewer";
 import { MasonryGrid } from "@/components/masonry-grid";
 import { Filters } from "@/components/filters";
 import { JsonLd } from "@/components/json-ld";
@@ -105,8 +106,21 @@ export default async function SlugPage({ params }: { params: Params }) {
         <span className="text-foreground">{w.title}</span>
       </nav>
 
+      <MockupViewer
+        target={{
+          id: w.id,
+          slug: w.slug,
+          title: w.title,
+          device: w.device,
+          priceCents: w.priceCents,
+          isPremium: w.isPremium,
+          previewSrc: previewUrl(w, { width: 1200, quality: 70 }),
+          videoSrc: w.kind === "live" ? videoPreviewUrl(w, { width: 1000 }) : null,
+          poster: previewUrl(w, { width: 1200, quality: 60 }),
+        }}
+      >
       <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
-        <div className="overflow-hidden rounded-card border border-border bg-surface">
+        <MockupTrigger className="group cursor-pointer overflow-hidden rounded-card border border-border bg-surface transition hover:border-accent/50">
           {w.kind === "live" && videoPreviewUrl(w, { width: 1400 }) ? (
             <LiveThumb
               videoSrc={videoPreviewUrl(w, { width: 1400 })!}
@@ -130,7 +144,10 @@ export default async function SlugPage({ params }: { params: Params }) {
               contain
             />
           )}
-        </div>
+          <p className="border-t border-border bg-surface/80 py-2 text-center text-xs text-muted transition group-hover:text-foreground">
+            Tap to see it on a real {w.device}
+          </p>
+        </MockupTrigger>
 
         <div className="space-y-6">
           <div>
@@ -191,6 +208,7 @@ export default async function SlugPage({ params }: { params: Params }) {
           </div>
         </div>
       </div>
+      </MockupViewer>
 
       {related.length > 0 && (
         <section className="mt-16">
