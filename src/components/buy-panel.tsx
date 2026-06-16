@@ -7,7 +7,7 @@ import { Button } from "./ui";
 import { useCart } from "./cart";
 import { useMockupOptional } from "./mockup-viewer";
 import { ShareButton } from "./share-button";
-import { formatPrice } from "@/lib/utils";
+import { useFormatPrice } from "./currency";
 
 export interface BuyTarget {
   id: string;
@@ -25,6 +25,7 @@ export function BuyPanel({ w }: { w: BuyTarget }) {
   const mockup = useMockupOptional();
   const [busy, setBusy] = useState(false);
   const inCart = cart.has(w.id);
+  const formatPrice = useFormatPrice();
 
   if (!w.isPremium) {
     return (

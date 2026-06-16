@@ -6,7 +6,7 @@ import { Check, Download, Lock, Plus } from "lucide-react";
 import { ProtectedImage } from "./protected-image";
 import { LiveThumb } from "./live-thumb";
 import { useCart } from "./cart";
-import { formatPrice } from "@/lib/utils";
+import { useFormatPrice } from "./currency";
 
 export interface CardWallpaper {
   id: string;
@@ -31,6 +31,7 @@ export function WallpaperCard({ w }: { w: CardWallpaper }) {
   const cart = useCart();
   const inCart = cart.has(w.id);
   const isLive = w.kind === "live" && !!w.videoSrc;
+  const formatPrice = useFormatPrice();
 
   return (
     <motion.article

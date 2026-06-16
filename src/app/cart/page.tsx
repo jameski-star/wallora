@@ -6,7 +6,7 @@ import Image from "next/image";
 import { Trash2, ArrowRight, ShoppingBag } from "lucide-react";
 import { Container, Button, ButtonLink } from "@/components/ui";
 import { useCart } from "@/components/cart";
-import { formatPrice } from "@/lib/utils";
+import { useFormatPrice } from "@/components/currency";
 
 // How many lines to show before the "View more" button, and how many more
 // each click reveals. Keeps long carts from scrolling past the viewport.
@@ -15,6 +15,7 @@ const PAGE_SIZE = 6;
 export default function CartPage() {
   const cart = useCart();
   const [visible, setVisible] = useState(PAGE_SIZE);
+  const formatPrice = useFormatPrice();
 
   // slice() tolerates a `visible` larger than the list, so removing items just
   // shows fewer rows without needing to reset the window.

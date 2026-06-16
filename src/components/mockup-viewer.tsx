@@ -14,7 +14,7 @@ import { Check, Download, Loader2, ShieldCheck, ShoppingBag, X } from "lucide-re
 import { StudioMockup } from "./studio-mockup";
 import { Button } from "./ui";
 import { useCart } from "./cart";
-import { formatPrice } from "@/lib/utils";
+import { useFormatPrice } from "./currency";
 
 export interface MockupTarget {
   id: string;
@@ -124,6 +124,7 @@ function Modal({ target, onClose }: { target: MockupTarget; onClose: () => void 
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const inCart = cart.has(target.id);
+  const formatPrice = useFormatPrice();
 
   const line = {
     wallpaperId: target.id,

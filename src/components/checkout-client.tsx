@@ -7,13 +7,16 @@ import { Button } from "./ui";
 import { useCart } from "./cart";
 import { DeviceMockup } from "./device-mockup";
 import { beginCheckout } from "@/app/checkout/actions";
-import { formatPrice } from "@/lib/utils";
+import { useFormatPrice, useCurrency } from "./currency";
+import { formatPrice as formatUsd } from "@/lib/utils";
 
 export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
   const cart = useCart();
   const [email, setEmail] = useState(defaultEmail);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const formatPrice = useFormatPrice();
+  const { code: currencyCode } = useCurrency();
   // When set, the PesaPal payment page is shown in an in-page modal iframe
   // instead of navigating the whole window away (or opening a new tab).
   const [payUrl, setPayUrl] = useState<string | null>(null);
@@ -79,8 +82,13 @@ export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
         )}
         <Button onClick={pay} size="lg" className="w-full" disabled={busy}>
           {busy ? <Loader2 className="animate-spin" size={18} /> : <Lock size={18} />}
-          Pay {formatPrice(cart.totalCents)} with PesaPal
+          Pay {formatUsd(cart.totalCents)} with PesaPal
         </Button>
+        {currencyCode === "KES" && (
+          <p className="text-center text-xs text-muted">
+            ≈ {formatPrice(cart.totalCents)} in Kenyan Shillings
+          </p>
+        )}
         <p className="flex items-center gap-1.5 text-xs text-muted">
           <ShieldCheck size={14} /> Payments processed securely by PesaPal (Mobile Money & Card).
         </p>

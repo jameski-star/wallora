@@ -1,9 +1,11 @@
 import type { Viewport } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { baseMetadata, websiteJsonLd, organizationJsonLd } from "@/lib/seo";
 import { getViewer } from "@/lib/auth";
 import { CartProvider } from "@/components/cart";
+import { CurrencyProvider } from "@/components/currency";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { themeInitScript } from "@/components/theme-toggle";
@@ -26,7 +28,11 @@ export const viewport: Viewport = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const viewer = await getViewer();
+  const [viewer, hdrs] = await Promise.all([getViewer(), headers()]);
+
+  // Vercel sets this header at the CDN edge from the visitor's IP geolocation.
+  // Falls back to "XX" (unknown) in local dev or when the header is absent.
+  const country = hdrs.get("x-vercel-ip-country") ?? "XX";
 
   return (
     <html
@@ -48,12 +54,14 @@ export default async function RootLayout({
         <JsonLd data={websiteJsonLd()} />
         <JsonLd data={organizationJsonLd()} />
         <CartProvider>
-          <Navbar
-            displayName={viewer.profile?.displayName ?? null}
-            isAdmin={viewer.isAdmin}
-          />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <CurrencyProvider country={country}>
+            <Navbar
+              displayName={viewer.profile?.displayName ?? null}
+              isAdmin={viewer.isAdmin}
+            />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </CurrencyProvider>
         </CartProvider>
       </body>
     </html>
