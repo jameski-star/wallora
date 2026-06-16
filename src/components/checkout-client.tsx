@@ -7,21 +7,19 @@ import { Button } from "./ui";
 import { useCart } from "./cart";
 import { DeviceMockup } from "./device-mockup";
 import { beginCheckout } from "@/app/checkout/actions";
-import { useFormatPrice, useCurrency } from "./currency";
-import { formatPrice as formatUsd } from "@/lib/utils";
+import { useFormatPrice } from "./currency";
 
 export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
   const cart = useCart();
   const [email, setEmail] = useState(defaultEmail);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // This single hook now handles localizing the display string everywhere
   const formatPrice = useFormatPrice();
-  const { code: currencyCode } = useCurrency();
-  // When set, the PesaPal payment page is shown in an in-page modal iframe
-  // instead of navigating the whole window away (or opening a new tab).
+  
   const [payUrl, setPayUrl] = useState<string | null>(null);
 
-  // Lock background scroll while the payment popup is open.
   useEffect(() => {
     if (!payUrl) return;
     const prev = document.body.style.overflow;
@@ -39,10 +37,6 @@ export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
       cart.lines.map((l) => l.wallpaperId),
     );
     if (res.ok) {
-      // Open the PesaPal hosted page inside a modal popup. When payment
-      // completes, PesaPal redirects the iframe back to /checkout/callback,
-      // which breaks out to the top window (see EscapeIframe) so the buyer
-      // lands on the full confirmation page.
       setPayUrl(res.redirectUrl);
       setBusy(false);
     } else {
@@ -82,13 +76,9 @@ export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
         )}
         <Button onClick={pay} size="lg" className="w-full" disabled={busy}>
           {busy ? <Loader2 className="animate-spin" size={18} /> : <Lock size={18} />}
-          Pay {formatUsd(cart.totalCents)} with PesaPal
+          {/* Button now correctly uses dynamic formatPrice */}
+          Pay {formatPrice(cart.totalCents)} with PesaPal
         </Button>
-        {currencyCode === "KES" && (
-          <p className="text-center text-xs text-muted">
-            ≈ {formatPrice(cart.totalCents)} in Kenyan Shillings
-          </p>
-        )}
         <p className="flex items-center gap-1.5 text-xs text-muted">
           <ShieldCheck size={14} /> Payments processed securely by PesaPal (Mobile Money & Card).
         </p>
@@ -127,9 +117,7 @@ export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
   );
 }
 
-/** In-page popup that hosts the PesaPal payment page in an iframe. */
 function PaymentModal({ url, onClose }: { url: string; onClose: () => void }) {
-  // Close on Escape for keyboard accessibility.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -174,11 +162,6 @@ function PaymentModal({ url, onClose }: { url: string; onClose: () => void }) {
   );
 }
 
-/**
- * Rendered on the callback page. If that page was loaded inside the payment
- * popup iframe, escape to the top window so the buyer sees the full-page
- * confirmation (and the cart clears in the top-level context).
- */
 export function EscapeIframe() {
   useEffect(() => {
     try {
@@ -186,18 +169,16 @@ export function EscapeIframe() {
         window.top.location.href = window.location.href;
       }
     } catch {
-      /* cross-origin top — nothing we can do, page still renders in-frame */
+      // Ignore
     }
   }, []);
   return null;
 }
 
-/** Clears the cart once a purchase is confirmed. */
 export function ClearCartOnMount() {
   const cart = useCart();
   useEffect(() => {
     cart.clear();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return null;
 }

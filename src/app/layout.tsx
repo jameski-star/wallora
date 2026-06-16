@@ -16,8 +16,6 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 export const metadata = baseMetadata;
 
-// Tints the mobile browser chrome (address bar) per active color scheme — the
-// site ships dark by default with an optional light theme.
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#0a0a0b" },
@@ -31,16 +29,12 @@ export default async function RootLayout({
   const [viewer, hdrs] = await Promise.all([getViewer(), headers()]);
 
   // Vercel sets this header at the CDN edge from the visitor's IP geolocation.
-  // Falls back to "XX" (unknown) in local dev or when the header is absent.
-  const country = hdrs.get("x-vercel-ip-country") ?? "XX";
+  // Falls back to "US" if undefined. Change this to "KE" to test locally!
+  const country = hdrs.get("x-vercel-ip-country") ?? "US";
 
   return (
     <html
       lang="en"
-      // The theme init script below adds `.light` to <html> before hydration,
-      // so the client class can differ from the server. suppressHydrationWarning
-      // scopes the warning away from this element (and also tolerates browser
-      // extensions that mutate <html>/<head> before React loads).
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
@@ -54,7 +48,8 @@ export default async function RootLayout({
         <JsonLd data={websiteJsonLd()} />
         <JsonLd data={organizationJsonLd()} />
         <CartProvider>
-          <CurrencyProvider country={country}>
+          {/* Note the prop change here to `defaultCountry` */}
+          <CurrencyProvider defaultCountry={country}>
             <Navbar
               displayName={viewer.profile?.displayName ?? null}
               isAdmin={viewer.isAdmin}
