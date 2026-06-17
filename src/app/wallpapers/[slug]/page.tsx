@@ -16,7 +16,9 @@ import { previewUrl, videoPreviewUrl } from "@/lib/cloudinary";
 import {
   wallpaperMetadata,
   wallpaperJsonLd,
+  wallpaperWebPageJsonLd,
   breadcrumbJsonLd,
+  categoryItemListJsonLd,
 } from "@/lib/seo";
 import { CATEGORIES } from "@/lib/constants";
 
@@ -35,6 +37,7 @@ export async function generateMetadata({
     return {
       title: `${category.name} Wallpapers in 4K & HD`,
       description: `Browse premium ${category.name.toLowerCase()} wallpapers optimized for desktop and mobile devices. ${category.description}`,
+      keywords: [category.name.toLowerCase(), `${category.name.toLowerCase()} wallpaper`, "4k wallpaper", "hd wallpaper", category.slug],
       alternates: { canonical: `/wallpapers/${slug}` },
     };
   }
@@ -67,6 +70,7 @@ export default async function SlugPage({ params }: { params: Params }) {
             { name: category.name, path: `/wallpapers/${slug}` },
           ])}
         />
+        <JsonLd data={categoryItemListJsonLd(category, wallpapers, categoryIntro(category.slug, category.name, meta?.description))} />
         <SectionHeading title={`${category.name} wallpapers`} subtitle={meta?.description} />
         <p className="mb-6 text-sm text-muted">{total} wallpapers</p>
         <div className="mb-6">
@@ -88,6 +92,7 @@ export default async function SlugPage({ params }: { params: Params }) {
   return (
     <Container className="py-8 sm:py-12">
       <JsonLd data={wallpaperJsonLd(w)} />
+      <JsonLd data={wallpaperWebPageJsonLd(w)} />
       <JsonLd
         data={breadcrumbJsonLd([
           { name: "Wallpapers", path: "/wallpapers" },
@@ -249,4 +254,36 @@ function Spec({
       <dd className="mt-0.5 font-medium capitalize">{value}</dd>
     </div>
   );
+}
+
+/**
+ * Generate an SEO-rich intro paragraph for a category page. Uses the canonical
+ * CATEGORIES description as a seed, then adds keyword-bearing context that helps
+ * search engines understand what each category offers.
+ */
+function categoryIntro(slug: string, name: string, seedDescription?: string): string {
+  const base = seedDescription ?? `Browse our curated ${name.toLowerCase()} wallpaper collection.`;
+  const extras: Record<string, string> = {
+    nature: " From misty mountain ranges and serene ocean vistas to lush forest canopies and golden-hour skies, every image is optimized for 4K monitors and high-DPI phone screens. Perfect for anyone looking to bring the beauty of the natural world to their desktop or lock screen.",
+    cars: " Featuring hypercars, vintage classics, concept vehicles and motorsport photography in ultra-high resolution. Whether you want a sleek Lamborghini on your phone or a vintage Porsche on your ultrawide monitor, these automotive wallpapers deliver stunning detail.",
+    sports: " Action-packed shots from football, basketball, motorsport, athletics and more. Freeze-frame the most iconic athletic moments in crisp 4K resolution for your desktop background or phone wallpaper.",
+    space: " Explore the cosmos through stunning deep-space photography — galaxies, nebulae, planetary surfaces and star fields rendered in vivid detail. Ideal for dark-themed desktops and OLED screens.",
+    gaming: " Key art, character illustrations and iconic game scenes from the biggest titles and indie gems. Level up your setup with high-resolution gaming wallpapers designed for widescreen monitors and mobile devices.",
+    anime: " Hand-picked anime art, manga illustrations and stylized character wallpapers in stunning HD. From beloved classics to the latest seasonal hits, find the perfect anime wallpaper for your screen.",
+    technology: " Abstract circuit patterns, futuristic interfaces, neon code aesthetics and digital art inspired by innovation. Perfect for developers, designers and tech enthusiasts looking for a modern desktop background.",
+    abstract: " Bold gradients, geometric forms, generative art and experimental compositions in vibrant color palettes. These abstract wallpapers add a contemporary art feel to any screen.",
+    minimal: " Clean lines, subtle textures and restrained color palettes designed for distraction-free desktops and calm phone backgrounds. Minimal wallpapers that let your icons and widgets breathe.",
+    dark: " Deep blacks, moody tones and OLED-optimized wallpapers that save battery on AMOLED screens while looking incredible. Perfect for night-owl setups and dark-themed UIs.",
+    cities: " Dramatic skylines, atmospheric street photography and iconic urban architecture from cities around the world. Bring the energy of Tokyo, New York, Paris or Dubai to your screen.",
+    animals: " Intimate wildlife portraits, playful pet photography and majestic creature close-ups. From African savanna predators to domestic companions, find animal wallpapers that inspire.",
+    illustration: " Digital paintings, concept art, fantasy illustrations and creative designs from talented artists. These wallpapers blur the line between digital art and desktop background.",
+    music: " Album-inspired art, instrument photography, concert visuals and music-themed designs. Set the tone with wallpapers that celebrate your favorite genres and artists.",
+    movies: " Cinematic key art, iconic movie posters and dramatic scene stills from blockbuster films and beloved TV series. Turn your screen into a personal home theater.",
+    travel: " Breathtaking destinations, famous landmarks and hidden gems captured in stunning resolution. Wanderlust-inducing wallpapers from every corner of the globe.",
+    food: " Mouth-watering flat-lays, culinary close-ups and artistic food photography. Delicious wallpapers for foodies and home cooks.",
+    flowers: " Delicate botanical close-ups, lush floral arrangements and seasonal bloom photography. Elegant flower wallpapers that bring natural beauty to any device.",
+    seasons: " Spring blossoms, summer beaches, autumn foliage and winter wonderlands. Seasonal wallpapers that keep your screen in sync with the time of year.",
+    patterns: " Geometric tessellations, textile textures, repeating motifs and hypnotic designs. Pattern wallpapers add depth and visual interest without overwhelming your screen.",
+  };
+  return base + (extras[slug] ?? ` Discover high-quality ${name.toLowerCase()} wallpapers optimized for desktop, phone and tablet screens in 4K and HD resolution.`);
 }

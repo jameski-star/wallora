@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getRepo } from "@/lib/repo";
 import { abs } from "@/lib/seo";
+import { previewUrl } from "@/lib/cloudinary";
 import { LEGAL_LINKS } from "@/lib/constants";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -15,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: abs("/"), changeFrequency: "daily", priority: 1 },
     { url: abs("/wallpapers"), changeFrequency: "daily", priority: 0.9 },
     { url: abs("/blog"), changeFrequency: "weekly", priority: 0.6 },
+    { url: abs("/about"), changeFrequency: "monthly", priority: 0.5 },
   ];
 
   const postPages: MetadataRoute.Sitemap = posts.map((p) => ({
@@ -41,12 +43,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: w.createdAt,
     changeFrequency: "monthly",
     priority: 0.6,
-    // Strip any query string from the image URL before it lands in <image:loc>.
-    // Some preview images are Unsplash URLs whose `?auto=format&fit=crop` carries
-    // a bare `&` — invalid XML that makes Google reject the entire sitemap. Query
-    // params aren't needed for image indexing; Cloudinary URLs have none, so this
-    // is a no-op for real wallpapers.
-    images: [w.previewPublicId.split("?")[0]],
+    // Google requires full absolute URLs in image sitemap entries. Use the
+    // Cloudinary preview URL so crawlers can discover and index every asset.
+    images: [previewUrl(w, { width: 1200, quality: 70 }).split("?")[0]],
   }));
 
   return [...staticPages, ...legalPages, ...categoryPages, ...wallpaperPages, ...postPages];

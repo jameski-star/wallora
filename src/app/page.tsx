@@ -4,13 +4,15 @@ import { Container, SectionHeading, ButtonLink } from "@/components/ui";
 import { MasonryGrid } from "@/components/masonry-grid";
 import { FeaturedHero } from "@/components/featured-hero";
 import { FadeInView } from "@/components/motion";
+import { JsonLd } from "@/components/json-ld";
+import { homePageJsonLd } from "@/lib/seo";
 import {
   listWallpapers,
   listCategories,
 } from "@/lib/catalog";
 import { getFeaturedForDisplay } from "@/lib/featured";
 import { previewUrl } from "@/lib/cloudinary";
-import { CATEGORIES, SITE_TAGLINE } from "@/lib/constants";
+import { CATEGORIES, SITE_TAGLINE, SITE_NAME } from "@/lib/constants";
 
 export default async function HomePage() {
   const [featured, week, popular, fresh, live, categories] = await Promise.all([
@@ -31,7 +33,7 @@ export default async function HomePage() {
         h1 — it states what this page is actually about.
       */}
       <h1 className="sr-only">
-        Premium 4K &amp; HD Wallpapers — Download for Desktop, Phone &amp; Tablet
+        {`${SITE_NAME} — Premium 4K & HD Wallpapers for Desktop, Phone & Tablet`}
       </h1>
 
       {/* Hero */}
@@ -53,6 +55,9 @@ export default async function HomePage() {
           <ButtonLink href="/wallpapers" className="mt-6">Browse wallpapers</ButtonLink>
         </div>
       )}
+
+      {/* Homepage WebPage schema — tells AI browsers what Aurava is (invisible, SEO-only) */}
+      <JsonLd data={homePageJsonLd()} />
 
       {/* Value props */}
       <div className="mt-6 grid gap-4 sm:grid-cols-3">

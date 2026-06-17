@@ -16,8 +16,8 @@ export function Footer() {
 
         <div>
           <h3 className="mb-3 text-sm font-semibold">Categories</h3>
-          <ul className="space-y-2 text-sm text-muted">
-            {CATEGORIES.slice(0, 6).map((c) => (
+          <ul className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-muted">
+            {CATEGORIES.map((c) => (
               <li key={c.slug}>
                 <Link href={`/wallpapers/${c.slug}`} className="transition hover:text-foreground">
                   {c.name}
@@ -44,6 +44,7 @@ export function Footer() {
           <h3 className="mb-3 text-sm font-semibold">Account</h3>
           <ul className="space-y-2 text-sm text-muted">
             <li><Link href="/blog" className="transition hover:text-foreground">Blog</Link></li>
+            <li><Link href="/about" className="transition hover:text-foreground">About</Link></li>
             <li><Link href="/login" className="transition hover:text-foreground">Sign in</Link></li>
             <li><Link href="/signup" className="transition hover:text-foreground">Create account</Link></li>
             <li><Link href="/account" className="transition hover:text-foreground">My downloads</Link></li>

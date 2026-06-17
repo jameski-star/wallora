@@ -13,7 +13,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "*.supabase.co" },
     ],
     // Allow a couple of quality levels for previews vs. hero imagery.
-    qualities: [40, 60, 75, 90],
+    qualities: [10, 20, 40, 60, 75, 90],
   },
 };
 
