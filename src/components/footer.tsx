@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Container } from "./ui";
 import { CATEGORIES, DEVICE_TYPES, LEGAL_LINKS, SITE_NAME, SITE_TAGLINE, SITE_CONTACT_EMAIL } from "@/lib/constants";
 
@@ -9,16 +10,18 @@ const FOOTER_CATEGORIES = CATEGORIES.filter((c) =>
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-border/60 bg-surface/30">
-      {/* ── Main grid ─────────────────────────────────────────────────── */}
-      <Container className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-12">
+    <footer className="relative mt-auto">
+      {/* Accent glow line — separates footer from page with a warm light strip */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
+
+      <div className="bg-[linear-gradient(180deg,color-mix(in_oklch,var(--surface)_85%,var(--background))_0%,color-mix(in_oklch,var(--background)_92%,var(--accent)_2%)_100%)]">
+        {/* ── Main grid ─────────────────────────────────────────────────── */}
+        <Container className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-12">
         {/* Brand column */}
         <div className="lg:col-span-4">
           <Link href="/" className="flex items-center gap-2.5 font-bold text-foreground">
-            <span className="grid size-9 place-items-center rounded-xl bg-accent text-sm font-black text-accent-foreground">
-              A
-            </span>
-            <span className="text-lg tracking-tight">{SITE_NAME}</span>
+            <Image src="/logo.png" alt="" width={36} height={36} className="rounded-xl" />
+            <span className="text-lg tracking-tight font-bold">{SITE_NAME}</span>
           </Link>
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted">
             {SITE_TAGLINE}. Hand-picked designs for every screen.
@@ -35,6 +38,11 @@ export function Footer() {
             >
               {SITE_CONTACT_EMAIL}
             </a>
+          </p>
+
+          {/* Subtle wallpaper count badge — social proof */}
+          <p className="mt-3 text-[11px] text-muted/50">
+            Trusted by creators worldwide
           </p>
         </div>
 
@@ -106,7 +114,7 @@ export function Footer() {
             <li className="pt-1">
               <Link
                 href="/login"
-                className="inline-block rounded-lg border border-border bg-surface px-4 py-1.5 text-xs font-medium text-foreground transition hover:border-accent/40 hover:bg-surface-2"
+                className="inline-block rounded-lg border border-accent/30 bg-accent/8 px-4 py-1.5 text-xs font-medium text-foreground transition hover:border-accent/50 hover:bg-accent/15"
               >
                 Sign in
               </Link>
@@ -116,23 +124,24 @@ export function Footer() {
       </Container>
 
       {/* ── Bottom bar ────────────────────────────────────────────────── */}
-      <div className="border-t border-border/60">
+      <div className="border-t border-border/30">
         <Container className="flex flex-col items-center gap-3 py-5 sm:flex-row sm:justify-between">
           <p className="text-xs text-muted/70">
             &copy; {new Date().getFullYear()} {SITE_NAME}. All rights reserved.
           </p>
-          <nav className="flex flex-wrap items-center gap-x-5 gap-y-1.5">
+          <nav className="flex flex-wrap items-center gap-x-2 gap-y-1">
             {LEGAL_LINKS.map((l) => (
               <Link
                 key={l.href}
                 href={l.href}
-                className="text-xs text-muted/70 transition-colors hover:text-foreground"
+                className="min-h-11 inline-flex items-center px-2 py-2 text-xs text-muted/70 transition-colors hover:text-foreground sm:min-h-0 sm:py-0"
               >
                 {l.label}
               </Link>
             ))}
           </nav>
         </Container>
+      </div>
       </div>
     </footer>
   );

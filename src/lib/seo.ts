@@ -129,11 +129,19 @@ export function wallpaperJsonLd(w: Wallpaper) {
     isFamilyFriendly: !w.isMature,
     genre: w.categorySlug,
     creditText: SITE_NAME,
+    copyrightNotice: `\u00A9 ${new Date().getFullYear()} ${SITE_NAME}`,
+    license: url,
+    acquireLicensePage: url,
+    creator: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,
       url: SITE_URL,
-      logo: { "@type": "ImageObject", url: abs("/icon.svg") },
+      logo: { "@type": "ImageObject", url: abs("/icon.png") },
     },
     ...(w.isPremium
       ? {
@@ -144,9 +152,6 @@ export function wallpaperJsonLd(w: Wallpaper) {
             availability: "https://schema.org/InStock",
             url,
           },
-          license: url,
-          acquireLicensePage: url,
-          copyrightNotice: `© ${new Date().getFullYear()} ${SITE_NAME}`,
         }
       : {}),
   };
@@ -215,7 +220,7 @@ export function organizationJsonLd() {
     "@id": `${SITE_URL}/#organization`,
     name: SITE_NAME,
     url: SITE_URL,
-    logo: abs("/icon.svg"),
+    logo: abs("/icon.png"),
     description: BRAND_DESCRIPTION,
     // TODO: add brand profile URLs once live, e.g.
     // sameAs: ["https://x.com/...", "https://instagram.com/...", "https://pinterest.com/..."],

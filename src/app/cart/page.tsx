@@ -46,7 +46,7 @@ export default function CartPage() {
                     href={`/wallpapers/${l.slug}`}
                     className="relative size-16 shrink-0 overflow-hidden rounded-lg sm:size-20"
                   >
-                    <Image src={l.previewUrl} alt={l.title} fill sizes="80px" className="object-cover" />
+                    <Image src={l.previewUrl} alt={l.title} fill sizes="80px" unoptimized className="object-cover" />
                   </Link>
                   <div className="min-w-0 flex-1">
                     <Link

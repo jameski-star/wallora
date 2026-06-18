@@ -39,6 +39,12 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
+        {/* Preconnect to Cloudinary CDN — eliminates DNS + TLS round-trip for images */}
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="" />
+        {/* DNS prefetch for Supabase (auth + API calls) */}
+        <link rel="dns-prefetch" href="//supabase.co" />
+        {/* Apple touch icon for iOS home-screen shortcuts */}
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <script
           suppressHydrationWarning
           dangerouslySetInnerHTML={{ __html: themeInitScript }}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Shield, Zap, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Container, SectionHeading, ButtonLink } from "@/components/ui";
 import { MasonryGrid } from "@/components/masonry-grid";
 import { FeaturedHero } from "@/components/featured-hero";
@@ -11,8 +11,8 @@ import {
   listCategories,
 } from "@/lib/catalog";
 import { getFeaturedForDisplay } from "@/lib/featured";
-import { previewUrl } from "@/lib/cloudinary";
-import { CATEGORIES, SITE_TAGLINE, SITE_NAME } from "@/lib/constants";
+import { previewUrl, videoPreviewUrl } from "@/lib/cloudinary";
+import { SITE_NAME } from "@/lib/constants";
 
 export default async function HomePage() {
   const [featured, week, popular, fresh, live, categories] = await Promise.all([
@@ -23,6 +23,12 @@ export default async function HomePage() {
     listWallpapers({ kind: "live", limit: 8 }),
     listCategories(),
   ]);
+
+  // LCP hero image URL for manual preload (Cloudinary already optimizes,
+  // so we bypass Next.js image proxy and preload directly).
+  const heroSrc = featured
+    ? previewUrl(featured.wallpaper, { width: 800 })
+    : null;
 
   return (
     <Container className="py-8 sm:py-12">
@@ -36,22 +42,36 @@ export default async function HomePage() {
         {`${SITE_NAME} — Premium 4K & HD Wallpapers for Desktop, Phone & Tablet`}
       </h1>
 
-      {/* Hero */}
+      {/* Preload the hero image for LCP — bypasses Next.js image proxy */}
+      {heroSrc && (
+        <link
+          rel="preload"
+          as="image"
+          href={heroSrc}
+          fetchPriority="high"
+          imageSrcSet={heroSrc}
+          imageSizes="(max-width:640px) 90vw, 600px"
+        />
+      )}
+
+      {/* Wallpaper of the day — priority=true for LCP */}
       {featured ? (
         <FeaturedHero
           slug={featured.wallpaper.slug}
           title={featured.title}
           caption={featured.caption}
           description={featured.description}
-          previewSrc={previewUrl(featured.wallpaper, { width: 1100 })}
+          previewSrc={previewUrl(featured.wallpaper, { width: 800 })}
           width={featured.wallpaper.width}
           height={featured.wallpaper.height}
+          device={featured.wallpaper.device}
+          videoSrc={videoPreviewUrl(featured.wallpaper, { width: 700 })}
+          priority
         />
       ) : (
         <div className="rounded-card border border-border bg-surface p-12 text-center">
-          {/* Not an <h1>: the page-level sr-only <h1> above owns that role. */}
           <p className="text-4xl font-bold">Aurava</p>
-          <p className="mt-2 text-muted">{SITE_TAGLINE}</p>
+          <p className="mt-2 text-muted">Premium 4K & HD wallpapers</p>
           <ButtonLink href="/wallpapers" className="mt-6">Browse wallpapers</ButtonLink>
         </div>
       )}
@@ -59,58 +79,33 @@ export default async function HomePage() {
       {/* Homepage WebPage schema — tells AI browsers what Aurava is (invisible, SEO-only) */}
       <JsonLd data={homePageJsonLd()} />
 
-      {/* Value props */}
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        {[
-          { icon: Sparkles, title: "Curated 4K & HD", body: "Hand-picked, high-resolution art for every screen." },
-          { icon: Shield, title: "Protected previews", body: "Reduced-resolution previews; full-res originals delivered securely after purchase." },
-          { icon: Zap, title: "Instant delivery", body: "Pay and download via a secure, expiring link." },
-        ].map((f) => (
-          <div key={f.title} className="rounded-card border border-border bg-surface p-5">
-            <f.icon className="mb-3 text-accent" size={22} />
-            <p className="font-semibold">{f.title}</p>
-            <p className="mt-1 text-sm text-muted">{f.body}</p>
-          </div>
+      {/* Categories — compact pill bar, hidden on mobile to keep the focus on images */}
+      <div className="mt-8 hidden sm:flex flex-wrap items-center gap-2">
+        <Link
+          href="/wallpapers"
+          className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-muted transition hover:border-accent/40 hover:text-foreground"
+        >
+          All
+        </Link>
+        {categories.map((c) => (
+          <Link
+            key={c.slug}
+            href={`/wallpapers/${c.slug}`}
+            className="rounded-full border border-border/70 px-3 py-1 text-xs font-medium text-muted transition hover:border-accent/40 hover:text-foreground"
+          >
+            {c.name}
+          </Link>
         ))}
       </div>
 
-      {/* Categories */}
-      <section className="mt-16">
-        <SectionHeading
-          title="Browse by category"
-          subtitle="Find your vibe across our collections."
-          action={
-            <Link href="/wallpapers" className="hidden items-center gap-1 text-sm text-accent hover:underline sm:flex">
-              View all <ArrowRight size={14} />
-            </Link>
-          }
-        />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
-          {categories.map((c) => {
-            const meta = CATEGORIES.find((x) => x.slug === c.slug);
-            return (
-              <Link
-                key={c.slug}
-                href={`/wallpapers/${c.slug}`}
-                className="group rounded-xl border border-border bg-surface p-4 text-center transition hover:border-accent/50 hover:bg-surface-2"
-              >
-                <p className="font-medium group-hover:text-accent">{c.name}</p>
-                <p className="mt-1 line-clamp-1 text-xs text-muted">{meta?.description}</p>
-              </Link>
-            );
-          })}
-        </div>
-      </section>
-
       {/* Trending */}
-      <section className="mt-16">
+      <section className="mt-12">
         <FadeInView>
           <SectionHeading
-            title="Trending now"
-            subtitle="The most downloaded wallpapers this week."
+            title="Trending"
             action={
               <Link href="/wallpapers?sort=popular" className="hidden items-center gap-1 text-sm text-accent hover:underline sm:flex">
-                See more <ArrowRight size={14} />
+                See all <ArrowRight size={14} />
               </Link>
             }
           />
@@ -120,7 +115,7 @@ export default async function HomePage() {
 
       {/* Live wallpapers */}
       {live.length > 0 && (
-        <section className="mt-16">
+        <section className="mt-12">
           <FadeInView>
             <SectionHeading
               title={
@@ -132,7 +127,6 @@ export default async function HomePage() {
                   Live wallpapers
                 </span>
               }
-              subtitle="Wallpapers that move. Hover to preview the loop."
               action={
                 <Link href="/wallpapers?kind=live" className="hidden items-center gap-1 text-sm text-accent hover:underline sm:flex">
                   See all <ArrowRight size={14} />
@@ -146,29 +140,28 @@ export default async function HomePage() {
 
       {/* Wallpaper of the week */}
       {week && (
-        <section className="mt-16">
+        <section className="mt-12">
           <FadeInView>
-            <SectionHeading
-              title="Wallpaper of the week"
-              subtitle="A hand-picked favourite, refreshed every week."
-            />
+            <SectionHeading title="Wallpaper of the week" />
           </FadeInView>
           <FeaturedHero
             slug={week.wallpaper.slug}
             title={week.title}
             caption={week.caption}
             description={week.description}
-            previewSrc={previewUrl(week.wallpaper, { width: 1100 })}
+            previewSrc={previewUrl(week.wallpaper, { width: 800 })}
             width={week.wallpaper.width}
             height={week.wallpaper.height}
+            device={week.wallpaper.device}
+            videoSrc={videoPreviewUrl(week.wallpaper, { width: 700 })}
           />
         </section>
       )}
 
       {/* Fresh */}
-      <section className="mt-16">
+      <section className="mt-12">
         <FadeInView>
-          <SectionHeading title="Fresh drops" subtitle="Newest additions to the collection." />
+          <SectionHeading title="Fresh drops" />
         </FadeInView>
         <MasonryGrid wallpapers={fresh} />
       </section>

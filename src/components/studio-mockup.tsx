@@ -23,6 +23,7 @@ export function StudioMockup({
   alt,
   videoSrc,
   poster,
+  priority,
   className,
 }: {
   device: string;
@@ -30,9 +31,10 @@ export function StudioMockup({
   alt: string;
   videoSrc?: string | null;
   poster?: string;
+  priority?: boolean;
   className?: string;
 }) {
-  const screen = <Screen src={src} alt={alt} videoSrc={videoSrc} poster={poster} />;
+  const screen = <Screen src={src} alt={alt} videoSrc={videoSrc} poster={poster} priority={priority} />;
 
   return (
     <div
@@ -144,11 +146,13 @@ function Screen({
   alt,
   videoSrc,
   poster,
+  priority,
 }: {
   src: string;
   alt: string;
   videoSrc?: string | null;
   poster?: string;
+  priority?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const reduce = useReducedMotion();
@@ -185,6 +189,7 @@ function Screen({
       height={1000}
       fill
       fit="cover"
+      priority={priority}
       sizes="(max-width:640px) 90vw, 600px"
       className="absolute inset-0 z-10 h-full w-full"
     />

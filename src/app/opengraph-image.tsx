@@ -1,4 +1,6 @@
 import { ImageResponse } from "next/og";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { SITE_NAME, SITE_TAGLINE } from "@/lib/constants";
 
 // Default social share card for every route that doesn't set its own OG image
@@ -9,10 +11,15 @@ export const alt = `${SITE_NAME} — ${SITE_TAGLINE}`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-// Brand palette (mirrors icon.svg / globals.css): warm amber on near-black.
+// Brand palette (matches the Aurava logo: warm gold on deep black).
 const ACCENT = "#E3A53A";
-const ACCENT_FG = "#382C1B";
 const BG = "#0a0a0b";
+
+// Embed the logo as a base64 data URL so ImageResponse can render it without
+// needing a network request or absolute URL.
+const logoDataUrl = `data:image/png;base64,${readFileSync(
+  join(process.cwd(), "public", "logo.png"),
+).toString("base64")}`;
 
 export default function Image() {
   return new ImageResponse(
@@ -24,30 +31,28 @@ export default function Image() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: "80px",
-          background: `radial-gradient(1200px 600px at 100% 0%, rgba(227,165,58,0.18), ${BG})`,
+          padding: "70px 80px",
+          background: `radial-gradient(1200px 600px at 100% 0%, rgba(227,165,58,0.14), ${BG})`,
           color: "#fafafa",
-          fontFamily: "sans-serif",
+          fontFamily: 'Georgia, "Times New Roman", serif',
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 32 }}>
+          <img
+            src={logoDataUrl}
+            width={140}
+            height={140}
+            style={{ borderRadius: 28 }}
+            alt=""
+          />
           <div
             style={{
-              width: 120,
-              height: 120,
-              borderRadius: 28,
-              background: ACCENT,
-              color: ACCENT_FG,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 78,
+              fontSize: 80,
               fontWeight: 800,
+              letterSpacing: -2,
+              color: "#fafafa",
             }}
           >
-            A
-          </div>
-          <div style={{ fontSize: 72, fontWeight: 800, letterSpacing: -1 }}>
             {SITE_NAME}
           </div>
         </div>
@@ -55,17 +60,17 @@ export default function Image() {
         <div
           style={{
             marginTop: 40,
-            fontSize: 52,
+            fontSize: 44,
             fontWeight: 700,
-            lineHeight: 1.15,
+            lineHeight: 1.2,
             maxWidth: 900,
-            color: "#fafafa",
+            color: "#e4e4e7",
           }}
         >
           {SITE_TAGLINE}
         </div>
 
-        <div style={{ marginTop: 24, fontSize: 32, color: "#a1a1aa" }}>
+        <div style={{ marginTop: 20, fontSize: 30, color: "#a1a1aa" }}>
           Download 4K &amp; HD wallpapers for desktop, phone &amp; tablet
         </div>
 

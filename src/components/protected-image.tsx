@@ -12,6 +12,10 @@ import { cn } from "@/lib/utils";
  *  - drag-and-drop save disabled
  *  - selection + pointer events suppressed via `.protected-img`
  *  - a transparent overlay sits above the image to intercept long-press/save
+ *
+ * Images use `unoptimized` because Cloudinary already delivers width-capped,
+ * quality-compressed, format-negotiated URLs — the Next.js image proxy would
+ * redundantly re-fetch and re-encode them, causing timeouts on large PNGs.
  */
 export function ProtectedImage({
   src,
@@ -78,7 +82,7 @@ export function ProtectedImage({
           aria-hidden
           fill
           sizes={sizes ?? "100vw"}
-          quality={20}
+          unoptimized
           draggable={false}
           className={cn(
             "scale-110 object-cover blur-2xl transition-opacity duration-500",
@@ -91,9 +95,10 @@ export function ProtectedImage({
         alt={alt}
         {...(fill ? { fill: true } : { width, height })}
         sizes={sizes ?? "(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw"}
-        priority={priority}
+        unoptimized
         draggable={false}
-        quality={60}
+        fetchPriority={priority ? "high" : undefined}
+        loading={priority ? "eager" : "lazy"}
         onLoad={() => setLoaded(true)}
         placeholder={placeholder ? "blur" : "empty"}
         blurDataURL={placeholder}

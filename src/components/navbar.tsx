@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, ShoppingBag, User, Menu, X, Shield } from "lucide-react";
@@ -30,9 +31,9 @@ export function Navbar({
   return (
     <header className="sticky top-0 z-50 border-b border-border glass">
       <Container className="flex h-16 items-center gap-4">
-        <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-          <span className="grid size-8 place-items-center rounded-lg bg-accent font-bold text-accent-foreground">A</span>
-          <span className="text-lg">{SITE_NAME}</span>
+        <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
+          <Image src="/logo.png" alt="" width={32} height={32} className="rounded-lg" />
+          <span className="text-lg tracking-tight font-bold">{SITE_NAME}</span>
         </Link>
 
         <nav className="hidden items-center gap-1 lg:flex">

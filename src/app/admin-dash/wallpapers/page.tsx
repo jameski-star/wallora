@@ -41,7 +41,7 @@ export default async function AdminWallpapers() {
                 <td className="p-3">
                   <div className="flex items-center gap-3">
                     <span className="relative size-12 shrink-0 overflow-hidden rounded-md">
-                      <Image src={previewUrl(w, { width: 120 })} alt="" fill sizes="48px" className="object-cover" />
+                      <Image src={previewUrl(w, { width: 120 })} alt="" fill sizes="48px" unoptimized className="object-cover" />
                     </span>
                     <div className="min-w-0">
                       <p className="truncate font-medium">{w.title}</p>

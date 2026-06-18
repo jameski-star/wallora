@@ -12,8 +12,10 @@ const nextConfig: NextConfig = {
       // Supabase Storage public/signed URLs (host derived from project ref).
       { protocol: "https", hostname: "*.supabase.co" },
     ],
+    // Prefer AVIF (20-30% smaller than WebP) with WebP fallback.
+    formats: ["image/avif", "image/webp"],
     // Allow a couple of quality levels for previews vs. hero imagery.
-    qualities: [10, 20, 40, 60, 75, 90],
+    qualities: [10, 20, 40, 55, 60, 75, 90],
   },
 };
 

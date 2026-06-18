@@ -1,5 +1,6 @@
 import { ImageOff } from "lucide-react";
 import { WallpaperCard, type CardWallpaper } from "./wallpaper-card";
+import { ScrollReveal } from "./motion";
 import { previewUrl, placeholderUrl, videoPreviewUrl } from "@/lib/cloudinary";
 import type { Wallpaper } from "@/lib/types";
 
@@ -15,10 +16,10 @@ function toCard(w: Wallpaper): CardWallpaper {
     priceCents: w.priceCents,
     isPremium: w.isPremium,
     isMature: w.isMature,
-    previewSrc: previewUrl(w, { width: 700 }),
+    previewSrc: previewUrl(w, { width: 600, quality: 55 }),
     placeholder: placeholderUrl(w) || undefined,
     kind: w.kind,
-    videoSrc: videoPreviewUrl(w, { width: 700 }) ?? undefined,
+    videoSrc: videoPreviewUrl(w, { width: 500 }) ?? undefined,
   };
 }
 
@@ -37,8 +38,10 @@ export function MasonryGrid({ wallpapers }: { wallpapers: Wallpaper[] }) {
 
   return (
     <div className="masonry">
-      {wallpapers.map((w) => (
-        <WallpaperCard key={w.id} w={toCard(w)} />
+      {wallpapers.map((w, i) => (
+        <ScrollReveal key={w.id} index={i}>
+          <WallpaperCard w={toCard(w)} />
+        </ScrollReveal>
       ))}
     </div>
   );

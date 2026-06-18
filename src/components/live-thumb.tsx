@@ -12,6 +12,9 @@ import { cn } from "@/lib/utils";
  *
  * The clip + poster sit inside `.protected-img`, so neither can be dragged or
  * saved while the parent <Link> stays clickable.
+ *
+ * The video `src` is deferred: it starts empty and is only set once the element
+ * enters the viewport, so below-the-fold live wallpapers don't block LCP.
  */
 export function LiveThumb({
   videoSrc,
@@ -41,8 +44,16 @@ export function LiveThumb({
   const ref = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const reduce = useReducedMotion();
-  const inView = useInView(ref, { amount: 0.5 });
+  // Use a low threshold so the video src is populated well before the element
+  // is fully visible, giving the browser time to begin the fetch.
+  const inView = useInView(ref, { amount: 0.1 });
   const [active, setActive] = useState(false);
+  // Defer the video src until the element scrolls into view so below-the-fold
+  // live wallpapers don't compete with the LCP hero image on mobile.
+  const [srcLoaded, setSrcLoaded] = useState(false);
+  useEffect(() => {
+    if (inView && !srcLoaded) setSrcLoaded(true);
+  }, [inView, srcLoaded]);
 
   // Drive playback. On hover-capable devices the clip follows `active`
   // (hover/always); on touch devices it follows viewport visibility so the
@@ -72,16 +83,18 @@ export function LiveThumb({
       )}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Poster — the resting frame; also the SSR/no-JS fallback. */}
+      {/* Poster — the resting frame; also the SSR/no-JS fallback.
+           unoptimized: Cloudinary already delivers optimized URLs. */}
       <Image
         src={poster}
         alt={alt}
         width={width}
         height={height}
         sizes={sizes ?? "(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw"}
-        priority={priority}
+        unoptimized
         draggable={false}
-        quality={60}
+        fetchPriority={priority ? "high" : undefined}
+        loading={priority ? "eager" : "lazy"}
         className={cn(
           "transition-opacity duration-500",
           contain
@@ -92,7 +105,7 @@ export function LiveThumb({
       />
       <video
         ref={videoRef}
-        src={videoSrc}
+        src={srcLoaded ? videoSrc : undefined}
         poster={poster}
         muted
         loop
