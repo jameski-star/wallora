@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Sparkles, ArrowRight, Info, X } from "lucide-react";
+import { Sparkles, ArrowRight, Info, X, Monitor, Smartphone, Tablet } from "lucide-react";
 import { StudioMockup } from "./studio-mockup";
+import { cn } from "@/lib/utils";
 
 /**
  * Premium device-mockup hero for Wallpaper of the Day / Week.
@@ -26,6 +27,8 @@ export function FeaturedHero({
   height,
   device = "desktop",
   videoSrc,
+  isPremium = false,
+  category,
   titleAs: TitleTag = "h2",
   priority = false,
 }: {
@@ -38,6 +41,8 @@ export function FeaturedHero({
   height: number;
   device?: string;
   videoSrc?: string | null;
+  isPremium?: boolean;
+  category?: string;
   titleAs?: "h1" | "h2";
   /** Mark the hero image as LCP — preloads + fetchpriority=high. */
   priority?: boolean;
@@ -49,25 +54,79 @@ export function FeaturedHero({
     <section className="relative overflow-hidden rounded-card border border-border bg-surface">
       {/* ── Desktop: side-by-side ──────────────────────────────────── */}
       <div className="hidden lg:grid lg:grid-cols-2 lg:items-center lg:gap-2">
-        {/* Left — minimal info */}
-        <div className="flex flex-col justify-center px-10 py-12">
-          <span className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
-            <Sparkles size={13} />
-            {caption}
-          </span>
-          <TitleTag className="text-balance text-3xl font-bold leading-tight tracking-tight text-foreground xl:text-4xl">
-            {title}
-          </TitleTag>
-          <Link
-            href={`/wallpapers/${slug}`}
-            className="group mt-8 inline-flex w-fit items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
-          >
-            View wallpaper
-            <ArrowRight
-              size={16}
-              className="transition group-hover:translate-x-0.5"
-            />
-          </Link>
+        {/* Left — premium info panel with ambient glow */}
+        <div className="relative flex flex-col justify-center px-10 py-12">
+          {/* Ambient accent glow — warm radial echoing the logo */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -z-0"
+            style={{
+              background:
+                "radial-gradient(ellipse 80% 60% at 30% 40%, color-mix(in oklch, var(--accent) 6%, transparent), transparent)",
+            }}
+          />
+
+          <div className="relative z-10">
+            <span className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
+              <Sparkles size={13} />
+              {caption}
+            </span>
+
+            <TitleTag className="text-balance text-3xl font-bold leading-tight tracking-tight text-foreground xl:text-4xl">
+              {title}
+            </TitleTag>
+
+            {/* Resolution + device specs */}
+            <div className="mt-4 flex items-center gap-3 text-xs text-muted/80">
+              <span className="inline-flex items-center gap-1.5 font-mono tabular-nums">
+                {width} × {height}
+              </span>
+              <span className="h-3 w-px bg-border" />
+              <span className="inline-flex items-center gap-1">
+                {deviceType === "phone" ? (
+                  <Smartphone size={12} />
+                ) : deviceType === "tablet" ? (
+                  <Tablet size={12} />
+                ) : (
+                  <Monitor size={12} />
+                )}
+                {deviceType === "phone" ? "Phone" : deviceType === "tablet" ? "Tablet" : "Desktop"}
+              </span>
+            </div>
+
+            {/* Category + price badges */}
+            <div className="mt-3 flex items-center gap-2">
+              {category && (
+                <span className="rounded-full bg-surface-2/80 px-2.5 py-0.5 text-[11px] font-medium capitalize text-muted">
+                  {category}
+                </span>
+              )}
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
+                  isPremium
+                    ? "bg-accent/15 text-accent"
+                    : "bg-emerald-500/10 text-emerald-500",
+                )}
+              >
+                {isPremium ? "Premium" : "Free"}
+              </span>
+            </div>
+
+            {/* Accent divider */}
+            <div className="mt-6 h-px w-14 rounded-full bg-accent/30" />
+
+            <Link
+              href={`/wallpapers/${slug}`}
+              className="group mt-6 inline-flex w-fit items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
+            >
+              View wallpaper
+              <ArrowRight
+                size={16}
+                className="transition group-hover:translate-x-0.5"
+              />
+            </Link>
+          </div>
         </div>
 
         {/* Right — ambient room scene with device mockup */}

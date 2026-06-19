@@ -12,7 +12,7 @@ import {
 } from "@/lib/catalog";
 import { getFeaturedForDisplay } from "@/lib/featured";
 import { previewUrl, videoPreviewUrl } from "@/lib/cloudinary";
-import { SITE_NAME } from "@/lib/constants";
+import { CATEGORIES, SITE_NAME } from "@/lib/constants";
 
 export default async function HomePage() {
   const [featured, week, popular, fresh, live, categories] = await Promise.all([
@@ -66,6 +66,8 @@ export default async function HomePage() {
           height={featured.wallpaper.height}
           device={featured.wallpaper.device}
           videoSrc={videoPreviewUrl(featured.wallpaper, { width: 700 })}
+          isPremium={featured.wallpaper.isPremium}
+          category={CATEGORIES.find((c) => c.slug === featured.wallpaper.categorySlug)?.name}
           priority
         />
       ) : (
@@ -154,6 +156,8 @@ export default async function HomePage() {
             height={week.wallpaper.height}
             device={week.wallpaper.device}
             videoSrc={videoPreviewUrl(week.wallpaper, { width: 700 })}
+            isPremium={week.wallpaper.isPremium}
+            category={CATEGORIES.find((c) => c.slug === week.wallpaper.categorySlug)?.name}
           />
         </section>
       )}
