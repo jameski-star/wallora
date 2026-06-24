@@ -10,6 +10,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { themeInitScript } from "@/components/theme-toggle";
 import { JsonLd } from "@/components/json-ld";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -64,6 +65,7 @@ export default async function RootLayout({
             <Footer />
           </CurrencyProvider>
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );
