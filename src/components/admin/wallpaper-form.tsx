@@ -69,6 +69,69 @@ export function WallpaperForm({
   const [probe, setProbe] = useState<ProbeState>({ status: "idle" });
   const [auto, setAuto] = useState<AutoState>({ status: "idle" });
 
+  const [uploadState, setUploadState] = useState<
+    | { status: "idle" }
+    | { status: "uploading" }
+    | { status: "done"; publicId: string }
+    | { status: "error"; message: string }
+  >({ status: "idle" });
+
+  async function uploadFile(file: File) {
+    setUploadState({ status: "uploading" });
+    const fd = new FormData();
+    fd.append("file", file);
+    try {
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setUploadState({
+          status: "error",
+          message: body?.error ?? `Upload failed (${res.status})`,
+        });
+        return;
+      }
+      const data = (await res.json()) as {
+        publicId: string;
+        width: number;
+        height: number;
+        format: string;
+      };
+      setOriginalPublicId(data.publicId);
+      setResolution(`${data.width}x${data.height}`);
+      setDevice(deviceFromDimensions(data.width, data.height));
+      setUploadState({ status: "done", publicId: data.publicId });
+      // Auto-detect resolution from the newly uploaded image.
+      detectDimensions(data.publicId);
+      // Auto-trigger Gemini fill.
+      autofillWithId(data.publicId);
+    } catch {
+      setUploadState({ status: "error", message: "Network error — check your connection." });
+    }
+  }
+
+  /** Like `autofill` but skips the "has image?" check since we know we have it. */
+  async function autofillWithId(pid: string) {
+    setAuto({ status: "loading" });
+    const result = await analyzeWallpaper({
+      originalPublicId: pid,
+    });
+    if (!result.ok) {
+      setAuto({ status: "error", message: result.message });
+      return;
+    }
+    const d = result.data;
+    setTitle(d.title);
+    setDescription(d.description);
+    setTags(d.tags.join(", "));
+    setCategorySlug(d.categorySlug);
+    setAgeRating(d.ageRating);
+    setIsMature(d.isMature);
+    setHolidayTags(d.holidayTags.filter((h) => h !== "none").join(", "));
+    setSeoTitle(d.seoTitle);
+    setSeoDescription(d.seoDescription);
+    setAuto({ status: "done" });
+  }
+
   /**
    * Load the original off-screen to read its natural pixel dimensions, then set
    * the resolution field (and infer the device) automatically. Runs when the
@@ -200,6 +263,39 @@ export function WallpaperForm({
           className={inp}
         />
       </Field>
+
+      {/* Upload from computer — uploads to Cloudinary, fills the fields. */}
+      <div className="rounded-lg border-2 border-dashed border-border bg-surface/30 p-4">
+        <p className="mb-2 text-sm font-medium">Upload from computer</p>
+        <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-surface px-4 py-2.5 text-sm font-medium text-foreground transition hover:border-accent/50 border border-border">
+          {uploadState.status === "uploading" ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          )}
+          {uploadState.status === "uploading" ? "Uploading…" : "Choose image"}
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={uploadState.status === "uploading"}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) uploadFile(f);
+              // Reset so the same file can be re-selected.
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {uploadState.status === "done" && (
+          <span className="ml-3 text-xs text-emerald-400">
+            Uploaded — public ID filled below
+          </span>
+        )}
+        {uploadState.status === "error" && (
+          <span className="ml-3 text-xs text-amber-400">{uploadState.message}</span>
+        )}
+      </div>
 
       <Row>
         <Field

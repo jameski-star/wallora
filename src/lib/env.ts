@@ -33,6 +33,11 @@ export const env = {
 
   // Cloudinary
   cloudinaryCloud: pick("NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME"),
+  // Admin API key + secret used for asset search/context updates (import cron).
+  // Separate from the signing secret — Cloudinary generates distinct key/secret
+  // pairs for the Admin API vs. URL signing, though they can be the same when
+  // "Auto-populate signing secret to API secret" is enabled in dashboard.
+  cloudinaryApiKey: pick("CLOUDINARY_API_KEY"),
   // Server-only secret used to sign delivery URLs (NOT NEXT_PUBLIC — never
   // shipped to the client). On the client this resolves to undefined, so URL
   // builders simply produce unsigned URLs there (which is fine — the signed
@@ -79,6 +84,8 @@ export const features = {
    * signatures are simply ignored, so turning this on is safe at any time.
    */
   cloudinarySigned: Boolean(env.cloudinaryCloud && env.cloudinaryApiSecret),
+  /** Cloudinary Admin API (search + context write for import cron). */
+  cloudinaryAdmin: Boolean(env.cloudinaryCloud && env.cloudinaryApiKey && env.cloudinaryApiSecret),
   /** Gemini-powered admin auto-fill from an uploaded image. */
   gemini: Boolean(env.geminiApiKey),
   /** PesaPal live payment processing. */
