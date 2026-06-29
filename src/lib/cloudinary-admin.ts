@@ -91,7 +91,7 @@ export async function searchImages(opts: {
       expression: `resource_type:image${prefix ? ` AND public_id:${prefix}*` : ""}`,
       max_results: Math.min(maxResults - results.length, 500),
       with_context: true,
-      sort_by: [["created_at", "desc"]],
+      sort_by: [{ created_at: "desc" }],
     };
     if (nextCursor) body.next_cursor = nextCursor;
 
