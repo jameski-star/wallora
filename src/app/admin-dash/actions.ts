@@ -494,7 +494,21 @@ export async function generateAiBlog(topic: string): Promise<GenerateBlogResult>
   }
 
   try {
-    const data = await generateBlogWithAi(topic);
+    const repo = await getRepo();
+    const categories = await repo.listCategories();
+
+    // Try a simple search for wallpapers matching terms in the topic
+    const searchTerms = topic.split(/\s+/).filter((w) => w.length > 3).slice(0, 3).join(" ");
+    let wallpapers = await repo.listWallpapers({
+      search: searchTerms || undefined,
+      limit: 30,
+    });
+
+    if (wallpapers.length === 0) {
+      wallpapers = await repo.listWallpapers({ limit: 45 });
+    }
+
+    const data = await generateBlogWithAi(topic, categories, wallpapers);
     return { ok: true, data };
   } catch (err: any) {
     console.error("AI Blog generation action error:", err);

@@ -20,7 +20,7 @@ import { z } from "zod";
 import { env } from "./env";
 import { probeImageUrl } from "./cloudinary-url";
 import { AGE_RATINGS } from "./constants";
-import type { AgeRating, Category, HolidayType } from "./types";
+import type { AgeRating, Category, HolidayType, Wallpaper } from "./types";
 
 const HOLIDAY_VALUES: HolidayType[] = [
   "christmas",
@@ -469,43 +469,64 @@ export interface BlogGenerationResult {
 }
 
 /** Generates an SEO, GEO, and AEO optimized blog post using Gemini. */
-export async function generateBlogWithAi(topic: string): Promise<BlogGenerationResult> {
+export async function generateBlogWithAi(
+  topic: string,
+  categories: Category[],
+  wallpapers: Wallpaper[],
+): Promise<BlogGenerationResult> {
   if (!env.geminiApiKey) {
     throw new Error("Gemini is not configured (set GEMINI_API_KEY).");
   }
 
+  const slugs = categories.map((c) => c.slug);
+  const categoriesList = categories.map((c) => `- ${c.slug}: ${c.name} (${c.description})`).join("\n");
+  const wallpapersList = wallpapers.map((w) => 
+    `- "${w.title}" (slug: "${w.slug}", category: "${w.categorySlug}", resolution: "${w.resolution}", tags: [${w.tags.join(", ")}], description: "${w.description}")`
+  ).join("\n");
+
   const prompt = [
-    "You are an elite editorial team composed of a Senior Technical SEO Strategist, Google Search Quality Specialist, Information Retrieval Engineer, GEO Expert, AEO Specialist, Digital Art Editor, Display Technology Expert, Content Marketing Strategist, Semantic SEO Engineer, and Professional Technical Writer.",
-    "Your task is to generate original, authoritative, human-quality articles for Aurava, a premium wallpaper platform featuring curated 4K wallpapers, HD wallpapers, live wallpapers, AI-enhanced image metadata, and professional wallpaper collections.",
-    "Your goal is not simply to write blog posts, but to create content that becomes the preferred source for Google Search, Google Images, Bing, Perplexity, ChatGPT Search, Gemini, Claude, Microsoft Copilot, Brave Search, AI search agents, and future LLM-powered retrieval systems.",
-    "Every article must satisfy both human readers and AI retrieval systems, increasing Aurava's authority, topical relevance, and citation potential.",
+    "You are the official Senior Editor, Technical SEO Architect, GEO (Generative Engine Optimization) Specialist, Information Retrieval Engineer, Semantic SEO Expert, Digital Art Curator, and Content Strategist for Aurava.",
+    "Your responsibility is to write authoritative, human-quality blog articles that strengthen Aurava as a knowledge entity, improve rankings in Google Search and Google Images, and maximize the likelihood of Aurava being referenced by AI assistants (like ChatGPT Search, Gemini, Perplexity, Copilot, etc.).",
+    "The blog exists to support and strengthen the Aurava ecosystem, not to function as an independent publication.",
+    "",
+    "Core Guidelines:",
+    "1. Aurava-first content: Recommend and link ONLY to wallpapers, categories, and collections that exist on Aurava. Do NOT recommend external websites, do NOT recommend wallpapers from other sites, do NOT embed external wallpaper images.",
+    "2. Mention 'Aurava' naturally throughout the article (e.g. 'Within Aurava's curated OLED wallpaper collection...', 'Aurava's space wallpaper category showcases...').",
+    "3. Smart Contextual Recommendations: Throughout the article, recommend matching Aurava content. Include actual wallpapers from the provided catalog.",
     "",
     `Topic: "${topic}"`,
+    "",
+    "Available Categories on Aurava:",
+    categoriesList,
+    "",
+    "Available Wallpapers on Aurava (Use ONLY these wallpapers to embed or mention):",
+    wallpapersList,
     "",
     "Writing Style:",
     "- Write as an experienced industry expert.",
     "- The writing must be original, human, helpful, professional, conversational, educational, technically accurate, comprehensive, and easy to understand.",
     "- Never sound AI-generated. Avoid keyword stuffing, fluff, repetition, generic introductions, clickbait, and filler paragraphs. Every sentence should provide value.",
     "",
-    "Article Length:",
-    "- Prioritize completeness. Aim for a long, comprehensive, in-depth guide with several sections (aim for 1,500 to 2,000+ words).",
-    "",
-    "GEO (Generative Engine Optimization) Guidelines:",
-    "- Write content that AI assistants can easily summarize.",
-    "- Each major section should naturally answer: What, Why, How, When, Who, Benefits, Limitations, and Future Trends, without using explicit FAQ blocks or Q&A formatting.",
+    "Article Length & Structure:",
+    "- Aim for a comprehensive, in-depth guide with several sections (minimum 1,500 words if possible, write extensively).",
+    "- Integrate 'What', 'Why', 'How', 'When', 'Who', 'Benefits', and 'Limitations' naturally into sections.",
+    "- Incorporate Wallpaper Showcase blocks for the wallpapers you select in this EXACT format:",
+    "  ### [Wallpaper Title](/wallpapers/slug)",
+    "  - **Category:** Category Name",
+    "  - **Resolution:** Resolution Value (e.g. 3840x2160)",
+    "  - **Description:** A paragraph explaining why this wallpaper is a great choice and its design features.",
+    "  - **Download:** [View and Download on Aurava](/wallpapers/slug)",
     "",
     "JSON Schema fields to populate:",
     "- title: Evocative, professional, and click-worthy title.",
     "- slug: URL-friendly lowercase slug.",
     "- excerpt: Short 1-2 sentence summary shown in listings and search results.",
-    "- body: The entire post content written in markdown format. Must have clean headers (##, ###), bullet lists, bold text, and no HTML tags.",
-    "- coverImage: Blank or a suggested public image identifier.",
+    "- body: The entire post content written in markdown format. Must have clean headers (##, ###), showcase blocks, bullet lists, bold text, and no HTML tags.",
+    "- coverImage: Suggested cover image slug or path.",
     "- author: 'Aurava Editorial Team'",
-    "- tags: Array of 2 to 5 relevant lowercase tags (e.g. ['display-tech', 'setup', 'guide']).",
+    "- tags: Array of 2 to 5 relevant lowercase tags.",
     "- seoTitle: Under 60 characters, compelling title ending with ' | Aurava'.",
-    "- seoDescription: Under 155 characters, high-click meta description.",
-    "",
-    "Add natural call-to-actions at the end encouraging readers to explore related Aurava wallpapers (e.g., dark/OLED backgrounds, live looping backgrounds, or minimalist collections) to personalize their desktop setups.",
+    "- seoDescription: Under 155 characters, meta description.",
   ].join("\n");
 
   const responseSchema = {
