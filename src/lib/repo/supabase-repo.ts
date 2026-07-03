@@ -178,7 +178,11 @@ function buildQuery(
   if (q.category) query = query.eq("category_slug", q.category);
   if (q.device) query = query.eq("device", q.device);
   if (q.kind) query = query.eq("kind", q.kind);
-  if (q.tag) query = query.contains("tags", [q.tag]);
+  if (q.tag) {
+    query = query.contains("tags", [q.tag]);
+  } else if (q.tags && q.tags.length > 0) {
+    query = query.overlaps("tags", q.tags);
+  }
   if (typeof q.premium === "boolean") query = query.eq("is_premium", q.premium);
   if (q.search) {
     query = query.or(

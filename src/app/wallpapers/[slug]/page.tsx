@@ -72,7 +72,10 @@ export default async function SlugPage({ params }: { params: Params }) {
         />
         <JsonLd data={categoryItemListJsonLd(category, wallpapers, categoryIntro(category.slug, category.name, meta?.description))} />
         <SectionHeading title={`${category.name} wallpapers`} subtitle={meta?.description} />
-        <p className="mb-6 text-sm text-muted">{total} wallpapers</p>
+        <div className="mt-4 mb-6 max-w-3xl text-sm leading-relaxed text-muted/95 bg-surface-2/40 p-4 rounded-card border border-border/55">
+          <p>{categoryIntro(category.slug, category.name, meta?.description)}</p>
+        </div>
+        <p className="mb-6 text-sm text-muted font-medium">{total} wallpapers found</p>
         <div className="mb-6">
           <Filters lockedCategory={slug} />
         </div>

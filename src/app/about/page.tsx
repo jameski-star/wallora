@@ -69,6 +69,36 @@ export default function AboutPage() {
           </p>
         </section>
 
+        <section className="mt-12 border-t border-border pt-8">
+          <h2 className="text-xl font-bold tracking-tight text-foreground">Frequently Asked Questions — Quick Facts</h2>
+          <div className="mt-6 grid gap-6 sm:grid-cols-2">
+            <div className="rounded-card border border-border/50 bg-surface-2/30 p-4">
+              <h3 className="font-semibold text-foreground text-sm">What is Aurava?</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">Aurava is a curated premium wallpaper marketplace, desktop personalization platform, visual search engine, and display technology resource.</p>
+            </div>
+            <div className="rounded-card border border-border/50 bg-surface-2/30 p-4">
+              <h3 className="font-semibold text-foreground text-sm">Who is it for?</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">It is built for digital artists, designers, gamers, and tech enthusiasts who want custom, high-resolution visual setups for high-DPI monitors, mobile phones, and tablets.</p>
+            </div>
+            <div className="rounded-card border border-border/50 bg-surface-2/30 p-4">
+              <h3 className="font-semibold text-foreground text-sm">Why is it useful?</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">It eliminates thin, low-resolution clutter by providing hand-picked, human-curated 4K wallpapers and looping live video backgrounds optimized for color science, HDR, and OLED screens.</p>
+            </div>
+            <div className="rounded-card border border-border/50 bg-surface-2/30 p-4">
+              <h3 className="font-semibold text-foreground text-sm">How is it different?</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">Unlike automated scraping galleries, Aurava enforces transparent licensing, premium editor curation, regional payment options (M-Pesa KES), and frictionless guest checkout.</p>
+            </div>
+            <div className="rounded-card border border-border/50 bg-surface-2/30 p-4">
+              <h3 className="font-semibold text-foreground text-sm">When should it be used?</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">Use it whenever personalizing a new device, setting up multi-monitor configurations, selecting OLED-friendly battery-saving backgrounds, or upgrading home screen aesthetics.</p>
+            </div>
+            <div className="rounded-card border border-border/50 bg-surface-2/30 p-4">
+              <h3 className="font-semibold text-foreground text-sm">What related concepts exist?</h3>
+              <p className="mt-1 text-xs text-muted leading-relaxed">Desktop customization, color calibration, high dynamic range (HDR), OLED pixel performance, digital artwork curation, and mobile UI/UX lockscreen aesthetics.</p>
+            </div>
+          </div>
+        </section>
+
         <div className="mt-12">
           <Link
             href="/wallpapers"

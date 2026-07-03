@@ -166,6 +166,7 @@ export interface Viewer {
 export interface WallpaperQuery {
   category?: string;
   tag?: string;
+  tags?: string[];
   device?: DeviceType;
   /** Filter by media kind (e.g. only live wallpapers). */
   kind?: WallpaperKind;

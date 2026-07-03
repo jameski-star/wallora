@@ -319,3 +319,139 @@ interface GeminiResponse {
   }[];
   promptFeedback?: { blockReason?: string };
 }
+
+export interface ParsedSemanticSearch {
+  categorySlug: string;
+  device: string; // "desktop" | "phone" | "tablet" | "any"
+  kind: string; // "image" | "live" | "any"
+  premium: string; // "true" | "false" | "any"
+  tags: string[];
+  refinedQuery: string;
+  explanation: string;
+}
+
+/** Parses natural language search queries into structured database query parameters. */
+export async function parseSemanticSearchQuery(
+  rawQuery: string,
+  categories: Category[],
+): Promise<ParsedSemanticSearch> {
+  if (!env.geminiApiKey) {
+    return {
+      categorySlug: "any",
+      device: "any",
+      kind: "any",
+      premium: "any",
+      tags: [],
+      refinedQuery: rawQuery,
+      explanation: `Keyword search: "${rawQuery}"`,
+    };
+  }
+
+  const slugs = categories.map((c) => c.slug);
+  const prompt = [
+    "You are a semantic search query parser for Aurava, a premium wallpaper marketplace.",
+    "Analyze the user's natural language search query and extract structured query parameters.",
+    "",
+    "Database Taxonomy:",
+    `- Categories (choose the best matching slug, or "any"):`,
+    ...categories.map((c) => `  * ${c.slug}: ${c.name} (${c.description})`),
+    `- Devices (choose exactly one: "desktop", "phone", "tablet", or "any"):`,
+    `  * Choose "desktop" if the user mentions PC, laptop, monitor, ultrawide, Mac, iMac, computer, desktop, background, etc.`,
+    `  * Choose "phone" if the user mentions phone, iPhone, Android, lockscreen, mobile, smartphone, etc.`,
+    `  * Choose "tablet" if the user mentions iPad, tablet, etc.`,
+    `- Media Kind (choose exactly one: "image", "live", or "any"):`,
+    `  * Choose "live" if the user mentions live, video, animated, motion, loop, moving, etc.`,
+    `  * Otherwise default to "any".`,
+    `- Premium Status (choose exactly one: "true" for paid/premium, "false" for free, or "any"):`,
+    `  * Choose "true" if the user mentions premium, paid, buy, purchase, exclusive, etc.`,
+    `  * Choose "false" if the user mentions free, no-cost, download free, etc.`,
+    `  * Otherwise default to "any".`,
+    `- Tags (extract 1 to 5 descriptive semantic tags as an array of lowercase strings):`,
+    `  * Extract visual descriptors, moods, art styles, color names, and subject matters (e.g., "minimalist", "nature", "blue", "sunrise", "mountains", "peaceful", "cyberpunk", "vaporwave").`,
+    `  * Use synonyms if appropriate to increase the likelihood of matching existing tags.`,
+    `- Refined Query: Rewrite the search query into a simplified keyword string containing only the essential visual terms (e.g. "blue mountains sunrise minimalist").`,
+    `- Explanation: Write a short, editorially-polished sentence explaining the parsed intent (e.g. "Search for minimalist landscape wallpapers featuring blue mountains at sunrise.").`,
+    "",
+    `Parse this user query: "${rawQuery}"`,
+  ].join("\n");
+
+  const responseSchema = {
+    type: "OBJECT",
+    properties: {
+      categorySlug: { type: "STRING" },
+      device: { type: "STRING", enum: ["desktop", "phone", "tablet", "any"] },
+      kind: { type: "STRING", enum: ["image", "live", "any"] },
+      premium: { type: "STRING", enum: ["true", "false", "any"] },
+      tags: { type: "ARRAY", items: { type: "STRING" } },
+      refinedQuery: { type: "STRING" },
+      explanation: { type: "STRING" },
+    },
+    required: [
+      "categorySlug",
+      "device",
+      "kind",
+      "premium",
+      "tags",
+      "refinedQuery",
+      "explanation",
+    ],
+  };
+
+  try {
+    const res = await fetch(
+      `${GEMINI_ENDPOINT}/${env.geminiModel}:generateContent`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-goog-api-key": env.geminiApiKey,
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: prompt }],
+            },
+          ],
+          generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema,
+            temperature: 0.1,
+          },
+        }),
+      },
+    );
+
+    if (!res.ok) {
+      throw new Error(`Gemini status ${res.status}`);
+    }
+
+    const json = (await res.json()) as GeminiResponse;
+    const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) {
+      throw new Error("No candidates text from Gemini");
+    }
+
+    const raw = JSON.parse(text);
+    return {
+      categorySlug: slugs.includes(raw.categorySlug) ? raw.categorySlug : "any",
+      device: raw.device || "any",
+      kind: raw.kind || "any",
+      premium: raw.premium || "any",
+      tags: Array.isArray(raw.tags) ? raw.tags.map((t: string) => t.toLowerCase().trim()) : [],
+      refinedQuery: raw.refinedQuery || rawQuery,
+      explanation: raw.explanation || `Keyword search: "${rawQuery}"`,
+    };
+  } catch (err) {
+    console.error("Semantic search parsing error:", err);
+    return {
+      categorySlug: "any",
+      device: "any",
+      kind: "any",
+      premium: "any",
+      tags: [],
+      refinedQuery: rawQuery,
+      explanation: `Keyword search: "${rawQuery}"`,
+    };
+  }
+}

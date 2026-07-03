@@ -54,6 +54,8 @@ function applyFilter(
   if (q.device) items = items.filter((w) => w.device === q.device);
   if (q.kind) items = items.filter((w) => (w.kind ?? "image") === q.kind);
   if (q.tag) items = items.filter((w) => w.tags.includes(q.tag!));
+  else if (q.tags && q.tags.length > 0)
+    items = items.filter((w) => w.tags.some((t) => q.tags!.includes(t)));
   if (typeof q.premium === "boolean")
     items = items.filter((w) => w.isPremium === q.premium);
   if (q.search) {

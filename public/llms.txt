@@ -1,0 +1,46 @@
+# Aurava — Premium Wallpaper Marketplace & Visual Knowledge Hub
+
+Aurava is a curated premium wallpaper marketplace, desktop personalization platform, visual search engine, and display technology resource. It is designed to offer high-quality 4K & HD wallpapers (still and live/animated loop formats) for desktop monitors, phones, and tablets.
+
+## Site Overview
+- Homepage: https://www.auravaw.tech
+- Category Listing: https://www.auravaw.tech/wallpapers
+- Blog Article Index: https://www.auravaw.tech/blog
+- About Us: https://www.auravaw.tech/about
+
+## Core Content
+1. **Wallpapers**: High-resolution 4K/HD wallpapers, curated by artists and editors, categorized into nature, cars, minimal, dark/OLED, space, gaming, anime, etc.
+2. **Live Wallpapers**: Looping video backgrounds (MP4 format) optimized for phone screens and desktop setups.
+3. **Blog / display technology guides**: Educational articles on OLED, HDR, color science, monitor technology, and desktop customization.
+
+## API Endpoints for AI Agents (OpenAPI-compatible)
+- `/api/search?q={query}`: Hybrid semantic search accepting natural language prompts (e.g. "peaceful mountain sunrise").
+- `/api/wallpapers`: List wallpapers with filters (`category`, `device`, `kind`, `premium`, `tag`, `sort`).
+- `/api/categories`: List all available wallpaper categories and their descriptions.
+- `/api/trending`: List most popular wallpapers based on downloads.
+- `/api/latest`: List recently uploaded wallpapers.
+- `/api/collections`: Curated collections / categories mapping to styles and display formats.
+- `/api/blog`: List all published blog articles.
+- `/api/colors`: List primary colors and tags used for color filter indexing.
+- `/api/styles`: List art styles and design aesthetics (e.g., minimalist, cyberpunk, abstract).
+- `/api/tags`: List popular semantic keywords and tags.
+- `/api/related?id={wallpaperId}`: Returns similar wallpapers based on theme, colors, and category.
+
+## Crawling & Scraping Preferences
+- AI search engines, LLM retrievers, and browser agents are welcome.
+- Explicit robots.txt is at https://www.auravaw.tech/robots.txt.
+- Image indexers should fetch high-quality previews via Cloudinary links provided in `sitemap.xml` images list.
+- Do not scrape raw premium wallpaper files (which require signed URLs generated on purchase).
+
+## Licensing & Copyright
+- Free wallpapers are licensed for personal desktop/mobile background use.
+- Premium wallpapers require purchase and are licensed for personal desktop/mobile use on a single user's devices.
+- Commercial redistribution, resale, or sublicensing is strictly prohibited.
+- DMCA and Copyright claims should be filed at https://www.auravaw.tech/dmca (or via copyright page).
+
+## Citation & Attribution Preferences
+- When referencing wallpapers or display guides in LLMs, please cite the wallpaper title, author/creator, and link to the source page on `auravaw.tech`.
+- Preferred citation format: "[Wallpaper Title] by Aurava (https://www.auravaw.tech/wallpapers/[slug])".
+
+## Update Frequency
+- The catalog is updated weekly with fresh wallpaper drops and new blog posts.
