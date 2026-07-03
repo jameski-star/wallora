@@ -481,7 +481,7 @@ export async function generateBlogWithAi(
   const slugs = categories.map((c) => c.slug);
   const categoriesList = categories.map((c) => `- ${c.slug}: ${c.name} (${c.description})`).join("\n");
   const wallpapersList = wallpapers.map((w) => 
-    `- "${w.title}" (slug: "${w.slug}", category: "${w.categorySlug}", resolution: "${w.resolution}", tags: [${w.tags.join(", ")}], description: "${w.description}")`
+    `- "${w.title}" (slug: "${w.slug}", originalPublicId: "${w.originalPublicId}", category: "${w.categorySlug}", resolution: "${w.resolution}", tags: [${w.tags.join(", ")}], description: "${w.description}")`
   ).join("\n");
 
   const prompt = [
@@ -522,7 +522,7 @@ export async function generateBlogWithAi(
     "- slug: URL-friendly lowercase slug.",
     "- excerpt: Short 1-2 sentence summary shown in listings and search results.",
     "- body: The entire post content written in markdown format. Must have clean headers (##, ###), showcase blocks, bullet lists, bold text, and no HTML tags.",
-    "- coverImage: Suggested cover image slug or path.",
+    "- coverImage: The Cloudinary public ID or image URL of the wallpaper you want to use as the blog cover image. You MUST choose one of the exact 'originalPublicId' values from the list of available wallpapers below (e.g. 'https://images.unsplash.com/photo-...'). Do not use a wallpaper name or slug here.",
     "- author: 'Aurava Editorial Team'",
     "- tags: Array of 2 to 5 relevant lowercase tags.",
     "- seoTitle: Under 60 characters, compelling title ending with ' | Aurava'.",
