@@ -455,3 +455,129 @@ export async function parseSemanticSearchQuery(
     };
   }
 }
+
+export interface BlogGenerationResult {
+  title: string;
+  slug: string;
+  excerpt: string;
+  body: string;
+  coverImage: string;
+  author: string;
+  tags: string[];
+  seoTitle: string;
+  seoDescription: string;
+}
+
+/** Generates an SEO, GEO, and AEO optimized blog post using Gemini. */
+export async function generateBlogWithAi(topic: string): Promise<BlogGenerationResult> {
+  if (!env.geminiApiKey) {
+    throw new Error("Gemini is not configured (set GEMINI_API_KEY).");
+  }
+
+  const prompt = [
+    "You are an elite editorial team composed of a Senior Technical SEO Strategist, Google Search Quality Specialist, Information Retrieval Engineer, GEO Expert, AEO Specialist, Digital Art Editor, Display Technology Expert, Content Marketing Strategist, Semantic SEO Engineer, and Professional Technical Writer.",
+    "Your task is to generate original, authoritative, human-quality articles for Aurava, a premium wallpaper platform featuring curated 4K wallpapers, HD wallpapers, live wallpapers, AI-enhanced image metadata, and professional wallpaper collections.",
+    "Your goal is not simply to write blog posts, but to create content that becomes the preferred source for Google Search, Google Images, Bing, Perplexity, ChatGPT Search, Gemini, Claude, Microsoft Copilot, Brave Search, AI search agents, and future LLM-powered retrieval systems.",
+    "Every article must satisfy both human readers and AI retrieval systems, increasing Aurava's authority, topical relevance, and citation potential.",
+    "",
+    `Topic: "${topic}"`,
+    "",
+    "Writing Style:",
+    "- Write as an experienced industry expert.",
+    "- The writing must be original, human, helpful, professional, conversational, educational, technically accurate, comprehensive, and easy to understand.",
+    "- Never sound AI-generated. Avoid keyword stuffing, fluff, repetition, generic introductions, clickbait, and filler paragraphs. Every sentence should provide value.",
+    "",
+    "Article Length:",
+    "- Prioritize completeness. Aim for a long, comprehensive, in-depth guide with several sections (aim for 1,500 to 2,000+ words).",
+    "",
+    "GEO (Generative Engine Optimization) Guidelines:",
+    "- Write content that AI assistants can easily summarize.",
+    "- Each major section should naturally answer: What, Why, How, When, Who, Benefits, Limitations, and Future Trends, without using explicit FAQ blocks or Q&A formatting.",
+    "",
+    "JSON Schema fields to populate:",
+    "- title: Evocative, professional, and click-worthy title.",
+    "- slug: URL-friendly lowercase slug.",
+    "- excerpt: Short 1-2 sentence summary shown in listings and search results.",
+    "- body: The entire post content written in markdown format. Must have clean headers (##, ###), bullet lists, bold text, and no HTML tags.",
+    "- coverImage: Blank or a suggested public image identifier.",
+    "- author: 'Aurava Editorial Team'",
+    "- tags: Array of 2 to 5 relevant lowercase tags (e.g. ['display-tech', 'setup', 'guide']).",
+    "- seoTitle: Under 60 characters, compelling title ending with ' | Aurava'.",
+    "- seoDescription: Under 155 characters, high-click meta description.",
+    "",
+    "Add natural call-to-actions at the end encouraging readers to explore related Aurava wallpapers (e.g., dark/OLED backgrounds, live looping backgrounds, or minimalist collections) to personalize their desktop setups.",
+  ].join("\n");
+
+  const responseSchema = {
+    type: "OBJECT",
+    properties: {
+      title: { type: "STRING" },
+      slug: { type: "STRING" },
+      excerpt: { type: "STRING" },
+      body: { type: "STRING" },
+      coverImage: { type: "STRING" },
+      author: { type: "STRING" },
+      tags: { type: "ARRAY", items: { type: "STRING" } },
+      seoTitle: { type: "STRING" },
+      seoDescription: { type: "STRING" },
+    },
+    required: [
+      "title",
+      "slug",
+      "excerpt",
+      "body",
+      "coverImage",
+      "author",
+      "tags",
+      "seoTitle",
+      "seoDescription",
+    ],
+  };
+
+  const res = await fetch(
+    `${GEMINI_ENDPOINT}/${env.geminiModel}:generateContent`,
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-goog-api-key": env.geminiApiKey,
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: prompt }],
+          },
+        ],
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema,
+          temperature: 0.7,
+        },
+      }),
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error(`Gemini request failed with status ${res.status}`);
+  }
+
+  const json = (await res.json()) as GeminiResponse;
+  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    throw new Error("Gemini returned empty candidate text.");
+  }
+
+  const raw = JSON.parse(text);
+  return {
+    title: (raw.title || "").trim(),
+    slug: (raw.slug || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    excerpt: (raw.excerpt || "").trim(),
+    body: (raw.body || "").trim(),
+    coverImage: (raw.coverImage || "").trim(),
+    author: (raw.author || "Aurava Editorial Team").trim(),
+    tags: Array.isArray(raw.tags) ? raw.tags.map((t: string) => t.toLowerCase().trim()) : ["guide"],
+    seoTitle: (raw.seoTitle || "").trim(),
+    seoDescription: (raw.seoDescription || "").trim(),
+  };
+}

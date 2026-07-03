@@ -11,7 +11,7 @@ import { refreshWallpaperOfDay, refreshWallpaperOfWeek } from "@/lib/featured";
 import { features } from "@/lib/env";
 import { registerIpn } from "@/lib/pesapal";
 import { videoPosterUrl } from "@/lib/cloudinary";
-import { analyzeWallpaperImage, type WallpaperAnalysis } from "@/lib/gemini";
+import { analyzeWallpaperImage, type WallpaperAnalysis, generateBlogWithAi, type BlogGenerationResult } from "@/lib/gemini";
 import {
   SEED_CATEGORIES,
   SEED_FEATURED,
@@ -471,3 +471,34 @@ export async function clearCatalogAction(): Promise<SetupResult> {
     };
   }
 }
+
+export type GenerateBlogResult =
+  | { ok: true; data: BlogGenerationResult }
+  | { ok: false; message: string };
+
+/**
+ * Generates an SEO & GEO-optimized blog post using the AI Blog Generation Master Prompt.
+ */
+export async function generateAiBlog(topic: string): Promise<GenerateBlogResult> {
+  await requireAdmin();
+
+  if (!features.gemini) {
+    return {
+      ok: false,
+      message: "AI Blog generation is off — set GEMINI_API_KEY to enable it.",
+    };
+  }
+
+  if (!topic.trim()) {
+    return { ok: false, message: "Please provide a topic for the blog post." };
+  }
+
+  try {
+    const data = await generateBlogWithAi(topic);
+    return { ok: true, data };
+  } catch (err: any) {
+    console.error("AI Blog generation action error:", err);
+    return { ok: false, message: err?.message || "Failed to generate blog post." };
+  }
+}
+
