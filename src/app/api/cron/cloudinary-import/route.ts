@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { headers } from "next/headers";
 import { isAuthorizedCron } from "@/lib/cron-auth";
 import { features } from "@/lib/env";
 import { runCloudinaryImport } from "@/lib/cloudinary-import";
@@ -13,6 +14,7 @@ import { runCloudinaryImport } from "@/lib/cloudinary-import";
  * Also runs automatically as part of the daily wallpaper-of-day cron.
  */
 export async function GET(request: NextRequest) {
+  await headers();
   if (!isAuthorizedCron(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

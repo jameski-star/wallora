@@ -7,6 +7,7 @@ import {
   registerPesapalIpnAction,
   loadSampleContentAction,
   clearCatalogAction,
+  runPinterestAutopostAction,
   type SetupResult,
 } from "@/app/admin-dash/actions";
 
@@ -76,3 +77,35 @@ export function SampleContentForms() {
     </div>
   );
 }
+
+export function PinterestAutopostForm({ ready }: { ready: boolean }) {
+  const [state, action, pending] = useActionState(
+    runPinterestAutopostAction,
+    null,
+  );
+  return (
+    <form action={action} className="space-y-4">
+      <div className="flex items-end gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="count" className="text-xs font-semibold text-muted">
+            Number of wallpapers to post
+          </label>
+          <input
+            id="count"
+            name="count"
+            type="number"
+            min="1"
+            max="50"
+            defaultValue="10"
+            className="w-32 rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-semibold focus:border-accent focus:outline-none"
+          />
+        </div>
+        <Button type="submit" size="sm" disabled={pending || !ready}>
+          {pending ? "Posting…" : "Post to Pinterest now"}
+        </Button>
+      </div>
+      <ResultNote state={state} />
+    </form>
+  );
+}
+

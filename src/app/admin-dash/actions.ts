@@ -510,9 +510,56 @@ export async function generateAiBlog(topic: string): Promise<GenerateBlogResult>
 
     const data = await generateBlogWithAi(topic, categories, wallpapers);
     return { ok: true, data };
-  } catch (err: any) {
+  } catch (err) {
     console.error("AI Blog generation action error:", err);
-    return { ok: false, message: err?.message || "Failed to generate blog post." };
+    const message = err instanceof Error ? err.message : "Failed to generate blog post.";
+    return { ok: false, message };
   }
 }
+
+/**
+ * Manually trigger Pinterest auto-posting for a specified count of wallpapers.
+ */
+export async function runPinterestAutopostAction(
+  _prevState: SetupResult | null,
+  formData: FormData
+): Promise<SetupResult> {
+  await requireAdmin();
+  const countStr = formData.get("count");
+  const count = countStr ? parseInt(String(countStr), 10) : 10;
+
+  try {
+    const { autopostWallpapersToPinterest } = await import("@/lib/pinterest");
+    const result = await autopostWallpapersToPinterest(count);
+    
+    if (!result.ok) {
+      const failed = result.results.filter((r) => r.status === "failed");
+      const errMsgs = failed.map((r) => `${r.title}: ${r.error}`).join("; ");
+      return {
+        ok: false,
+        message: `Autoposting completed with errors: ${errMsgs || "Pinterest not configured or auth failed."}`,
+      };
+    }
+
+    const successCount = result.results.filter((r) => r.status === "success").length;
+    if (successCount === 0) {
+      return {
+        ok: true,
+        message: "No unposted wallpapers found to share on Pinterest.",
+      };
+    }
+
+    revalidatePath("/admin-dash/wallpapers");
+    return {
+      ok: true,
+      message: `Successfully posted ${successCount} wallpaper(s) to Pinterest!`,
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      message: e instanceof Error ? e.message : "Pinterest autoposting failed.",
+    };
+  }
+}
+
 

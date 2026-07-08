@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { headers } from "next/headers";
 import { isAuthorizedCron } from "@/lib/cron-auth";
 import { refreshWallpaperOfDay } from "@/lib/featured";
 import { features } from "@/lib/env";
@@ -6,6 +7,7 @@ import { runCloudinaryImport } from "@/lib/cloudinary-import";
 
 /** Daily (midnight) — refresh the Wallpaper of the Day and import new Cloudinary assets. */
 export async function GET(request: NextRequest) {
+  await headers();
   if (!isAuthorizedCron(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

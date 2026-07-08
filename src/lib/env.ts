@@ -67,6 +67,13 @@ export const env = {
 
   // Cron auth
   cronSecret: pick("CRON_SECRET"),
+
+  // Pinterest
+  pinterestAccessToken: pick("PINTEREST_ACCESS_TOKEN"),
+  pinterestRefreshToken: pick("PINTEREST_REFRESH_TOKEN"),
+  pinterestClientId: pick("PINTEREST_CLIENT_ID"),
+  pinterestClientSecret: pick("PINTEREST_CLIENT_SECRET"),
+  pinterestBoardId: pick("PINTEREST_BOARD_ID"),
 } as const;
 
 export const features = {
@@ -92,6 +99,14 @@ export const features = {
   pesapal: Boolean(env.pesapalConsumerKey && env.pesapalConsumerSecret),
   /** Resend transactional email. */
   resend: Boolean(env.resendKey),
+  /** Pinterest auto-posting. */
+  pinterest: Boolean(
+    pick("PINTEREST_ACCESS_TOKEN") ||
+      (pick("PINTEREST_REFRESH_TOKEN") &&
+        pick("PINTEREST_CLIENT_ID") &&
+        pick("PINTEREST_CLIENT_SECRET") &&
+        pick("PINTEREST_BOARD_ID"))
+  ),
 } as const;
 
 export type FeatureFlags = typeof features;

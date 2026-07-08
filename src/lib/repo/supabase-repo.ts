@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
   Category,
   FeaturedItem,
@@ -11,6 +11,7 @@ import type {
 import type { Repository } from "./types";
 import { createServerSupabase } from "../supabase/server";
 import { createAdminSupabase } from "../supabase/admin";
+import { env } from "../env";
 
 /* ── Row ↔ domain mapping ─────────────────────────────────────────────── */
 
@@ -41,6 +42,8 @@ type WallpaperRow = {
   holiday_tags: Wallpaper["holidayTags"];
   downloads: number;
   created_at: string;
+  pinterest_posted_at?: string | null;
+  pinterest_pin_id?: string | null;
 };
 
 function toWallpaper(r: WallpaperRow): Wallpaper {
@@ -71,6 +74,8 @@ function toWallpaper(r: WallpaperRow): Wallpaper {
     holidayTags: r.holiday_tags ?? ["none"],
     downloads: r.downloads,
     createdAt: r.created_at,
+    pinterestPostedAt: r.pinterest_posted_at ?? undefined,
+    pinterestPinId: r.pinterest_pin_id ?? undefined,
   };
 }
 
@@ -102,6 +107,8 @@ function fromWallpaper(w: Wallpaper): WallpaperRow {
     holiday_tags: w.holidayTags,
     downloads: w.downloads,
     created_at: w.createdAt,
+    pinterest_posted_at: w.pinterestPostedAt ?? null,
+    pinterest_pin_id: w.pinterestPinId ?? null,
   };
 }
 
@@ -159,8 +166,18 @@ function toOrder(r: Record<string, unknown>): Order {
 
 /* ── Repo ──────────────────────────────────────────────────────────────── */
 
+let cachedStaticClient: SupabaseClient | null = null;
+
 async function db(): Promise<SupabaseClient> {
-  return (await createServerSupabase()) as unknown as SupabaseClient;
+  if (!cachedStaticClient) {
+    if (!env.supabaseUrl || !env.supabaseAnonKey) {
+      throw new Error("Supabase credentials not configured");
+    }
+    cachedStaticClient = createClient(env.supabaseUrl, env.supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    }) as unknown as SupabaseClient;
+  }
+  return cachedStaticClient;
 }
 function admin(): SupabaseClient {
   return createAdminSupabase() as unknown as SupabaseClient;
@@ -184,6 +201,13 @@ function buildQuery(
     query = query.overlaps("tags", q.tags);
   }
   if (typeof q.premium === "boolean") query = query.eq("is_premium", q.premium);
+  if (typeof q.pinterestPosted === "boolean") {
+    if (q.pinterestPosted) {
+      query = query.not("pinterest_posted_at", "is", null);
+    } else {
+      query = query.is("pinterest_posted_at", null);
+    }
+  }
   if (q.search) {
     query = query.or(
       `title.ilike.%${q.search}%,description.ilike.%${q.search}%`,

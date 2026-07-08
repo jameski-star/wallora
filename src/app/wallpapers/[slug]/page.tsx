@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -7,7 +8,7 @@ import { ProtectedImage } from "@/components/protected-image";
 import { LiveThumb } from "@/components/live-thumb";
 import { BuyPanel } from "@/components/buy-panel";
 import { MockupViewer, MockupTrigger } from "@/components/mockup-viewer";
-import { MasonryGrid } from "@/components/masonry-grid";
+import { MasonryGrid, MasonrySkeleton } from "@/components/masonry-grid";
 import { Filters } from "@/components/filters";
 import { JsonLd } from "@/components/json-ld";
 import { getRepo } from "@/lib/repo";
@@ -23,6 +24,8 @@ import {
 import { CATEGORIES } from "@/lib/constants";
 
 type Params = Promise<{ slug: string }>;
+
+export const unstable_instant = { prefetch: "static", unstable_disableValidation: true };
 
 export async function generateMetadata({
   params,
@@ -50,7 +53,28 @@ export async function generateMetadata({
   notFound();
 }
 
-export default async function SlugPage({ params }: { params: Params }) {
+export default function SlugPage({ params }: { params: Params }) {
+  return (
+    <Suspense
+      fallback={
+        <Container className="py-8 sm:py-12">
+          <div className="mb-6 space-y-2">
+            <div className="skeleton h-8 w-48 rounded-lg" />
+            <div className="skeleton h-4 w-64 rounded" />
+          </div>
+          <div className="mb-6">
+            <div className="skeleton h-10 w-full rounded-lg" />
+          </div>
+          <MasonrySkeleton count={12} />
+        </Container>
+      }
+    >
+      <SlugContent params={params} />
+    </Suspense>
+  );
+}
+
+async function SlugContent({ params }: { params: Params }) {
   const { slug } = await params;
   const repo = await getRepo();
 
@@ -140,7 +164,7 @@ export default async function SlugPage({ params }: { params: Params }) {
               sizes="(max-width:1024px) 100vw, 60vw"
               always
               contain
-            />
+              />
           ) : (
             <ProtectedImage
               src={previewUrl(w, { width: 1400, quality: 60 })}
@@ -227,7 +251,6 @@ export default async function SlugPage({ params }: { params: Params }) {
     </Container>
   );
 }
-
 /**
  * Human-readable category name for breadcrumbs / structured data. Prefers the
  * canonical name from CATEGORIES; falls back to title-casing the slug so

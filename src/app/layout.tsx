@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -23,15 +24,40 @@ export const viewport: Viewport = {
   ],
 };
 
-export default async function RootLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+function LayoutFallback() {
+  return (
+    <div className="flex min-h-screen flex-col">
+      <div className="sticky top-0 z-50 border-b border-border bg-surface/85 backdrop-blur h-16 flex items-center px-4 sm:px-6 lg:px-8">
+        <div className="skeleton h-8 w-32 rounded-lg" />
+        <div className="ml-auto skeleton h-8 w-8 rounded-lg" />
+      </div>
+      <div className="flex-1 bg-background" />
+    </div>
+  );
+}
+
+async function DynamicLayout({ children }: { children: React.ReactNode }) {
   const [viewer, hdrs] = await Promise.all([getViewer(), headers()]);
 
   // Vercel sets this header at the CDN edge from the visitor's IP geolocation.
   // Falls back to "US" if undefined. Change this to "KE" to test locally!
   const country = hdrs.get("x-vercel-ip-country") ?? "US";
 
+  return (
+    <CurrencyProvider defaultCountry={country}>
+      <Navbar
+        displayName={viewer.profile?.displayName ?? null}
+        isAdmin={viewer.isAdmin}
+      />
+      <main className="flex-1">{children}</main>
+      <Footer />
+    </CurrencyProvider>
+  );
+}
+
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
@@ -54,15 +80,9 @@ export default async function RootLayout({
         <JsonLd data={websiteJsonLd()} />
         <JsonLd data={organizationJsonLd()} />
         <CartProvider>
-          {/* Note the prop change here to `defaultCountry` */}
-          <CurrencyProvider defaultCountry={country}>
-            <Navbar
-              displayName={viewer.profile?.displayName ?? null}
-              isAdmin={viewer.isAdmin}
-            />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </CurrencyProvider>
+          <Suspense fallback={<LayoutFallback />}>
+            <DynamicLayout>{children}</DynamicLayout>
+          </Suspense>
         </CartProvider>
       </body>
     </html>

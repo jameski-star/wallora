@@ -1,11 +1,14 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Container, SectionHeading } from "@/components/ui";
 import { Filters } from "@/components/filters";
-import { MasonryGrid } from "@/components/masonry-grid";
+import { MasonryGrid, MasonrySkeleton } from "@/components/masonry-grid";
 import { listWallpapers, countWallpapers, listCategories } from "@/lib/catalog";
 import type { DeviceType, WallpaperQuery } from "@/lib/types";
 
 type SP = Promise<{ [k: string]: string | string[] | undefined }>;
+
+export const unstable_instant = { prefetch: "static", unstable_disableValidation: true };
 
 export async function generateMetadata({
   searchParams,
@@ -27,7 +30,34 @@ function str(v: string | string[] | undefined): string | undefined {
   return typeof v === "string" && v ? v : undefined;
 }
 
-export default async function WallpapersPage({
+export default function WallpapersPage({
+  searchParams,
+}: {
+  searchParams: SP;
+}) {
+  return (
+    <Container className="py-8 sm:py-12">
+      <Suspense
+        fallback={
+          <>
+            <div className="mb-6 space-y-2">
+              <div className="skeleton h-8 w-48 rounded-lg" />
+              <div className="skeleton h-4 w-64 rounded" />
+            </div>
+            <div className="mb-6">
+              <div className="skeleton h-10 w-full rounded-lg" />
+            </div>
+            <MasonrySkeleton count={12} />
+          </>
+        }
+      >
+        <WallpapersContent searchParams={searchParams} />
+      </Suspense>
+    </Container>
+  );
+}
+
+async function WallpapersContent({
   searchParams,
 }: {
   searchParams: SP;
@@ -54,7 +84,7 @@ export default async function WallpapersPage({
   ]);
 
   return (
-    <Container className="py-8 sm:py-12">
+    <>
       <SectionHeading
         title={
           query.search
@@ -73,6 +103,6 @@ export default async function WallpapersPage({
         <Filters categories={categories} />
       </div>
       <MasonryGrid wallpapers={wallpapers} />
-    </Container>
+    </>
   );
 }

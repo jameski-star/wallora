@@ -58,6 +58,13 @@ function applyFilter(
     items = items.filter((w) => w.tags.some((t) => q.tags!.includes(t)));
   if (typeof q.premium === "boolean")
     items = items.filter((w) => w.isPremium === q.premium);
+  if (typeof q.pinterestPosted === "boolean") {
+    if (q.pinterestPosted) {
+      items = items.filter((w) => !!w.pinterestPostedAt);
+    } else {
+      items = items.filter((w) => !w.pinterestPostedAt);
+    }
+  }
   if (q.search) {
     const s = q.search.toLowerCase();
     items = items.filter(

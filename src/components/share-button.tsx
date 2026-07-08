@@ -10,17 +10,19 @@ export interface ShareTarget {
   device: string;
   /** Optional preview image — used by image-first networks (Pinterest). */
   image?: string;
+  /** Whether the wallpaper is premium. */
+  isPremium?: boolean;
 }
 
 /**
- * Minimal share control for free wallpapers. Where the Web Share API exists
+ * Minimal share control for free & premium wallpapers. Where the Web Share API exists
  * (mobile + some desktops) one tap opens the native share sheet — the user can
  * post straight to any social app. Elsewhere it falls back to a compact menu of
  * social links plus copy-link. The shared blurb is SEO-friendly — title, device
  * and brand — and always points at the canonical detail page so reshared posts
  * read well and link back here.
  */
-export function ShareButton({ slug, title, device, image }: ShareTarget) {
+export function ShareButton({ slug, title, device, image, isPremium }: ShareTarget) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -35,7 +37,16 @@ export function ShareButton({ slug, title, device, image }: ShareTarget) {
     typeof window !== "undefined"
       ? `${window.location.origin}/wallpapers/${slug}`
       : `/wallpapers/${slug}`;
-  const text = `${title} — free ${device} wallpaper in 4K & HD. Download free on ${SITE_NAME}.`;
+
+  // Ensure Pinterest media link is absolute
+  const absoluteImage =
+    image && image.startsWith("/") && typeof window !== "undefined"
+      ? `${window.location.origin}${image}`
+      : image;
+
+  const text = isPremium
+    ? `${title} — premium ${device} wallpaper in original resolution. Available on ${SITE_NAME}.`
+    : `${title} — free ${device} wallpaper in 4K & HD. Download free on ${SITE_NAME}.`;
   // Caption used when sharing the image file: some targets (e.g. WhatsApp)
   // attach the file and drop the separate `url`, so we fold the link into the
   // text to guarantee the follow-up link travels with the post / status.
@@ -122,7 +133,7 @@ export function ShareButton({ slug, title, device, image }: ShareTarget) {
     { label: "WhatsApp", href: `https://wa.me/?text=${enc(`${text} ${url}`)}` },
     {
       label: "Pinterest",
-      href: `https://pinterest.com/pin/create/button/?url=${enc(url)}&media=${enc(image ?? "")}&description=${enc(text)}`,
+      href: `https://pinterest.com/pin/create/button/?url=${enc(url)}&media=${enc(absoluteImage ?? "")}&description=${enc(text)}`,
     },
   ];
 

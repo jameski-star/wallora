@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { headers } from "next/headers";
 import { isAuthorizedCron } from "@/lib/cron-auth";
 import { runAutonomousBlogEngine } from "@/lib/autonomous-blog";
 
@@ -8,6 +9,7 @@ import { runAutonomousBlogEngine } from "@/lib/autonomous-blog";
  * generate, internally-link, validate, and publish a detailed display-tech or customization article.
  */
 export async function GET(request: NextRequest) {
+  await headers();
   if (!isAuthorizedCron(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

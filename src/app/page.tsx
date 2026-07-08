@@ -14,6 +14,8 @@ import { getFeaturedForDisplay } from "@/lib/featured";
 import { previewUrl, videoPreviewUrl } from "@/lib/cloudinary";
 import { CATEGORIES, SITE_NAME } from "@/lib/constants";
 
+export const unstable_instant = { prefetch: "static", unstable_disableValidation: true };
+
 export default async function HomePage() {
   const [featured, week, popular, fresh, live, categories] = await Promise.all([
     getFeaturedForDisplay("day"),

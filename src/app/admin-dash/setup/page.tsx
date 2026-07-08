@@ -1,6 +1,6 @@
 import { features } from "@/lib/env";
 import { Badge } from "@/components/ui";
-import { RegisterIpnForm, SampleContentForms } from "./setup-client";
+import { RegisterIpnForm, SampleContentForms, PinterestAutopostForm } from "./setup-client";
 
 /** One-click setup helpers for going live: register the PesaPal IPN and seed
  *  the catalog into Supabase. Both are idempotent and admin-gated. */
@@ -47,6 +47,23 @@ export default function AdminSetup() {
           <code>originals/&lt;id&gt;.jpg</code>.
         </p>
         <SampleContentForms />
+      </section>
+
+      {/* ── Pinterest Autoposting ────────────────────────────────────── */}
+      <section className="rounded-card border border-border bg-surface p-6">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold">Pinterest Autoposting</h2>
+          <Badge tone={features.pinterest ? "accent" : "neutral"}>
+            {features.pinterest ? "configured" : "credentials missing"}
+          </Badge>
+        </div>
+        <p className="mb-4 text-sm text-muted">
+          Auto-posts unposted wallpapers from your catalog to your Pinterest developer profile.
+          Requires either <code>PINTEREST_ACCESS_TOKEN</code> or a combination of{" "}
+          <code>PINTEREST_REFRESH_TOKEN</code> + <code>PINTEREST_CLIENT_ID</code> +{" "}
+          <code>PINTEREST_CLIENT_SECRET</code>, along with a <code>PINTEREST_BOARD_ID</code>.
+        </p>
+        <PinterestAutopostForm ready={features.pinterest} />
       </section>
     </div>
   );

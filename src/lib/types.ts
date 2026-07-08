@@ -86,6 +86,10 @@ export interface Wallpaper {
 
   downloads: number;
   createdAt: string; // ISO
+
+  // Pinterest autoposting status
+  pinterestPostedAt?: string; // ISO
+  pinterestPinId?: string;
 }
 
 export type FeatureSlot = "day" | "week";
@@ -175,4 +179,6 @@ export interface WallpaperQuery {
   sort?: "newest" | "popular" | "price-asc" | "price-desc";
   limit?: number;
   offset?: number;
+  /** Filter by whether the wallpaper has been posted to Pinterest. */
+  pinterestPosted?: boolean;
 }

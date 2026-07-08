@@ -106,17 +106,57 @@ async function refresh(
   return { updated: true, reason: `selected ${chosen.slug}`, wallpaper: chosen, item };
 }
 
-/**
- * Read the featured wallpaper for a slot for display, refreshing it on the fly
- * when it has gone stale. This makes rotation self-healing: even with no cron
- * configured, the day re-picks once the calendar date changes and the week once
- * the ISO week rolls over. Admin-pinned slots are returned untouched, and the
- * two slots are kept on different wallpapers whenever the pool allows.
- */
+async function fetchFeaturedDisplayCached(slot: FeatureSlot, dateKey: string) {
+  'use cache';
+  const repo = await getRepo();
+  const existing = await repo.getFeatured(slot);
+  if (!existing) return null;
+  const wallpaper = await repo.getWallpaperById(existing.wallpaperId);
+  if (!wallpaper) return null;
+  return {
+    wallpaper,
+    caption: existing.caption,
+    title: existing.title,
+    description: existing.description,
+    displayDate: existing.displayDate,
+    adminOverride: existing.adminOverride,
+  };
+}
+
+async function getFeaturedForDisplayCached(slot: FeatureSlot) {
+  'use cache';
+  const now = new Date();
+  return getFeaturedForDisplayUncached(slot, now);
+}
+
 export async function getFeaturedForDisplay(
   slot: FeatureSlot,
-  now = new Date(),
+  now?: Date,
 ): Promise<FeaturedDisplay | null> {
+  if (now) {
+    return getFeaturedForDisplayUncached(slot, now);
+  }
+  return getFeaturedForDisplayCached(slot);
+}
+
+async function getFeaturedForDisplayUncached(
+  slot: FeatureSlot,
+  now: Date,
+): Promise<FeaturedDisplay | null> {
+  const { holiday, dateKey } = await slotContext(slot, now);
+  const cached = await fetchFeaturedDisplayCached(slot, dateKey);
+
+  if (cached) {
+    if (cached.adminOverride || storedKeyFor(slot, cached.displayDate) === dateKey) {
+      return {
+        wallpaper: cached.wallpaper,
+        caption: cached.caption,
+        title: cached.title,
+        description: cached.description,
+      };
+    }
+  }
+
   const repo = await getRepo();
   const existing = await repo.getFeatured(slot);
 
@@ -136,8 +176,6 @@ export async function getFeaturedForDisplay(
     const pinned = await toDisplay(existing);
     if (pinned) return pinned;
   }
-
-  const { holiday, dateKey } = await slotContext(slot, now);
 
   // 2) Still fresh for this day/week → serve the stored pick.
   if (existing && !existing.adminOverride && storedKeyFor(slot, existing.displayDate) === dateKey) {

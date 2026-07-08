@@ -78,9 +78,18 @@ export function BuyPanel({ w }: { w: BuyTarget }) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-baseline gap-2">
-        <span className="text-3xl font-bold">{formatPrice(w.priceCents)}</span>
-        <span className="text-sm text-muted">one-time · original resolution</span>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-2">
+          <span className="text-3xl font-bold">{formatPrice(w.priceCents)}</span>
+          <span className="text-sm text-muted">one-time · original resolution</span>
+        </div>
+        <ShareButton
+          slug={w.slug}
+          title={w.title}
+          device={w.device}
+          image={w.previewSrc}
+          isPremium={w.isPremium}
+        />
       </div>
 
       <Button onClick={buyNow} size="lg" className="w-full" disabled={busy}>
