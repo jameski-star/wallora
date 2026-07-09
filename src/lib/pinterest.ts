@@ -16,9 +16,14 @@ interface PinterestPostResult {
  * or return the static user access token if configured directly.
  */
 async function getOrRefreshAccessToken(): Promise<string> {
-  if (env.pinterestRefreshToken && env.pinterestClientId && env.pinterestClientSecret) {
+  const refreshToken = env.pinterestRefreshToken?.replace(/\s+/g, "");
+  const clientId = env.pinterestClientId?.replace(/\s+/g, "");
+  const clientSecret = env.pinterestClientSecret?.replace(/\s+/g, "");
+  const accessToken = env.pinterestAccessToken?.replace(/\s+/g, "");
+
+  if (refreshToken && clientId && clientSecret) {
     const authHeader = Buffer.from(
-      `${env.pinterestClientId}:${env.pinterestClientSecret}`
+      `${clientId}:${clientSecret}`
     ).toString("base64");
 
     const response = await fetch("https://api.pinterest.com/v5/oauth/token", {
@@ -29,7 +34,7 @@ async function getOrRefreshAccessToken(): Promise<string> {
       },
       body: new URLSearchParams({
         grant_type: "refresh_token",
-        refresh_token: env.pinterestRefreshToken,
+        refresh_token: refreshToken,
       }),
     });
 
@@ -45,8 +50,8 @@ async function getOrRefreshAccessToken(): Promise<string> {
     return data.access_token;
   }
 
-  if (env.pinterestAccessToken) {
-    return env.pinterestAccessToken;
+  if (accessToken) {
+    return accessToken;
   }
 
   throw new Error("Pinterest credentials not configured (ACCESS_TOKEN or REFRESH_TOKEN/CLIENT_ID/CLIENT_SECRET is missing)");
@@ -90,7 +95,7 @@ async function postPin(
       link,
       title,
       description,
-      board_id: env.pinterestBoardId,
+      board_id: env.pinterestBoardId.replace(/\s+/g, ""),
       media_source: {
         source_type: "image_url",
         url: imageUrl,
