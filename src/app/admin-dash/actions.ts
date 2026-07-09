@@ -541,6 +541,14 @@ export async function runPinterestAutopostAction(
       };
     }
 
+    const skipped = result.results.find((r) => r.status === "skipped");
+    if (skipped) {
+      return {
+        ok: true,
+        message: `Pinterest autoposting skipped: ${skipped.error || "Integration is not configured."}`,
+      };
+    }
+
     const successCount = result.results.filter((r) => r.status === "success").length;
     if (successCount === 0) {
       return {
