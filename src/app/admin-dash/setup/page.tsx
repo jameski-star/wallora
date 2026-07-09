@@ -28,7 +28,7 @@ export default function AdminSetup() {
         <RegisterIpnForm ready={features.pesapal} />
       </section>
 
-      {/* ── Sample / demo content ───────────────────────────────────── */}
+      {/* ── Sample / demo content (Commented out) ──────────────────────
       <section className="rounded-card border border-border bg-surface p-6">
         <div className="mb-2 flex items-center justify-between gap-3">
           <h2 className="text-lg font-semibold">Demo content</h2>
@@ -48,6 +48,7 @@ export default function AdminSetup() {
         </p>
         <SampleContentForms />
       </section>
+      ───────────────────────────────────────────────────────────── */}
 
       {/* ── Pinterest Autoposting ────────────────────────────────────── */}
       <section className="rounded-card border border-border bg-surface p-6">

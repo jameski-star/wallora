@@ -17,7 +17,7 @@ function pick(...names: string[]): string | undefined {
 
 export const env = {
   siteUrl:
-    pick("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000",
+    (pick("NEXT_PUBLIC_SITE_URL") ?? "http://localhost:3000").replace(/\/$/, ""),
 
   // Google Search Console verification token. When set, `baseMetadata` emits the
   // <meta name="google-site-verification"> tag so Google can verify ownership
@@ -101,11 +101,11 @@ export const features = {
   resend: Boolean(env.resendKey),
   /** Pinterest auto-posting. */
   pinterest: Boolean(
-    pick("PINTEREST_ACCESS_TOKEN") ||
-      (pick("PINTEREST_REFRESH_TOKEN") &&
-        pick("PINTEREST_CLIENT_ID") &&
-        pick("PINTEREST_CLIENT_SECRET") &&
-        pick("PINTEREST_BOARD_ID"))
+    pick("PINTEREST_BOARD_ID") &&
+      (pick("PINTEREST_ACCESS_TOKEN") ||
+        (pick("PINTEREST_REFRESH_TOKEN") &&
+          pick("PINTEREST_CLIENT_ID") &&
+          pick("PINTEREST_CLIENT_SECRET")))
   ),
 } as const;
 

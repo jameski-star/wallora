@@ -16,10 +16,13 @@ export async function GET(request: NextRequest) {
 
   try {
     const result = await autopostWallpapersToPinterest(count);
-    return NextResponse.json({
-      ok: result.ok,
-      results: result.results,
-    });
+    return NextResponse.json(
+      {
+        ok: result.ok,
+        results: result.results,
+      },
+      { status: result.ok ? 200 : 500 }
+    );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return NextResponse.json(

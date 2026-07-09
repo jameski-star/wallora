@@ -176,7 +176,7 @@ export interface WallpaperQuery {
   kind?: WallpaperKind;
   search?: string;
   premium?: boolean;
-  sort?: "newest" | "popular" | "price-asc" | "price-desc";
+  sort?: "newest" | "oldest" | "popular" | "price-asc" | "price-desc";
   limit?: number;
   offset?: number;
   /** Filter by whether the wallpaper has been posted to Pinterest. */

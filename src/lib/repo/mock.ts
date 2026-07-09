@@ -85,6 +85,9 @@ function applyFilter(
     case "price-desc":
       items = [...items].sort((a, b) => b.priceCents - a.priceCents);
       break;
+    case "oldest":
+      items = [...items].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      break;
     default: // newest
       items = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }

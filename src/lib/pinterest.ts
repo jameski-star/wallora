@@ -68,8 +68,9 @@ async function postPin(
 
   // Get preview image URL. Size it to 1200px (standard resolution for Pinterest pins).
   let imageUrl = previewUrl(wallpaper, { width: 1200, quality: 85 });
-  if (imageUrl.startsWith("/")) {
-    imageUrl = `${env.siteUrl}${imageUrl}`;
+  if (!/^https?:\/\//.test(imageUrl)) {
+    const path = imageUrl.startsWith("/") ? imageUrl : `/${imageUrl}`;
+    imageUrl = `${env.siteUrl}${path}`;
   }
 
   const title = wallpaper.title.slice(0, 100);
@@ -121,7 +122,7 @@ export async function autopostWallpapersToPinterest(
     // If Pinterest integration is not configured, we return a mock/skipped response
     // to allow the app to function smoothly without crashing in keyless environments.
     return {
-      ok: false,
+      ok: true,
       results: [
         {
           wallpaperId: "none",
@@ -138,7 +139,7 @@ export async function autopostWallpapersToPinterest(
   // Retrieve wallpapers that have not been posted to Pinterest yet, sorted oldest first
   const unposted = await repo.listWallpapers({
     pinterestPosted: false,
-    sort: "price-asc", // We query sequentially, or default oldest by sorting newest asc (Wait, getRepo doesn't have oldest sort, but we can do a default/newest sorting or reverse)
+    sort: "oldest",
     limit: count,
     includeMature: false, // Do not autopost mature rated wallpapers to Pinterest by default to keep developer account safe
   });

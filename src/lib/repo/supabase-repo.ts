@@ -223,6 +223,9 @@ function buildQuery(
     case "price-desc":
       query = query.order("price_cents", { ascending: false });
       break;
+    case "oldest":
+      query = query.order("created_at", { ascending: true });
+      break;
     default:
       query = query.order("created_at", { ascending: false });
   }
