@@ -8,7 +8,8 @@ import { requireAdmin } from "@/lib/auth";
 import { getRepo } from "@/lib/repo";
 import { slugify } from "@/lib/utils";
 import { refreshWallpaperOfDay, refreshWallpaperOfWeek } from "@/lib/featured";
-import { features } from "@/lib/env";
+import { env, features } from "@/lib/env";
+import { notifyIndexNow } from "@/lib/indexnow";
 import { registerIpn } from "@/lib/pesapal";
 import { videoPosterUrl } from "@/lib/cloudinary";
 import { analyzeWallpaperImage, type WallpaperAnalysis, generateBlogWithAi, type BlogGenerationResult } from "@/lib/gemini";
@@ -136,6 +137,14 @@ export async function saveWallpaper(formData: FormData): Promise<void> {
   await repo.upsertWallpaper(wallpaper);
   revalidatePath("/admin-dash/wallpapers");
   revalidatePath("/wallpapers");
+
+  // Trigger instant search engine indexing
+  notifyIndexNow([
+    `${env.siteUrl}/wallpapers/${slug}`,
+    `${env.siteUrl}/sitemap.xml`,
+    `${env.siteUrl}/image-sitemap.xml`
+  ]).catch((err) => console.error("IndexNow error:", err));
+
   redirect("/admin-dash/wallpapers");
 }
 
@@ -242,6 +251,14 @@ export async function saveCategory(formData: FormData): Promise<void> {
   await repo.upsertCategory(category);
   revalidatePath("/admin-dash/categories");
   revalidatePath("/wallpapers");
+
+  // Trigger instant search engine indexing
+  notifyIndexNow([
+    `${env.siteUrl}/wallpapers?category=${slug}`,
+    `${env.siteUrl}/sitemap.xml`,
+    `${env.siteUrl}/categories-sitemap.xml`
+  ]).catch((err) => console.error("IndexNow error:", err));
+
   redirect("/admin-dash/categories");
 }
 
@@ -315,6 +332,16 @@ export async function savePost(formData: FormData): Promise<void> {
   revalidatePath("/admin-dash/blog");
   revalidatePath("/blog");
   revalidatePath(`/blog/${slug}`);
+
+  // Trigger instant search engine indexing if published
+  if (post.published) {
+    notifyIndexNow([
+      `${env.siteUrl}/blog/${slug}`,
+      `${env.siteUrl}/sitemap.xml`,
+      `${env.siteUrl}/blog-sitemap.xml`
+    ]).catch((err) => console.error("IndexNow error:", err));
+  }
+
   redirect("/admin-dash/blog");
 }
 
