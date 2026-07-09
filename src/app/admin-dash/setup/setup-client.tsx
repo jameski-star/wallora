@@ -100,7 +100,7 @@ export function PinterestAutopostForm({ ready }: { ready: boolean }) {
             className="w-32 rounded-md border border-border bg-surface px-3 py-1.5 text-sm font-semibold focus:border-accent focus:outline-none"
           />
         </div>
-        <Button type="submit" size="sm" disabled={pending || !ready}>
+        <Button type="submit" size="sm" disabled={pending}>
           {pending ? "Posting…" : "Post to Pinterest now"}
         </Button>
       </div>
