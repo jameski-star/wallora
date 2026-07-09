@@ -30,7 +30,7 @@ async function getOrRefreshAccessToken(): Promise<string> {
       `${clientId}:${clientSecret}`
     ).toString("base64");
 
-    const response = await fetch("https://api.pinterest.com/v5/oauth/token", {
+    const response = await fetch(`${PINTEREST_API_BASE}/v5/oauth/token`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${authHeader}`,
