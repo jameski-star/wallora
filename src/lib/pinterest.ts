@@ -3,6 +3,10 @@ import { getRepo } from "./repo";
 import { previewUrl } from "./cloudinary";
 import type { Wallpaper } from "./types";
 
+const PINTEREST_API_BASE = env.pinterestUseSandbox
+  ? "https://api-sandbox.pinterest.com"
+  : "https://api.pinterest.com";
+
 interface PinterestPostResult {
   wallpaperId: string;
   title: string;
@@ -26,7 +30,7 @@ async function getOrRefreshAccessToken(): Promise<string> {
       `${clientId}:${clientSecret}`
     ).toString("base64");
 
-    const response = await fetch("https://api.pinterest.com/v5/oauth/token", {
+    const response = await fetch(`${PINTEREST_API_BASE}/v5/oauth/token`, {
       method: "POST",
       headers: {
         Authorization: `Basic ${authHeader}`,
@@ -85,7 +89,7 @@ async function postPin(
     `Download ${wallpaper.title} on Aurava.`
   ).slice(0, 500);
 
-  const response = await fetch("https://api.pinterest.com/v5/pins", {
+  const response = await fetch(`${PINTEREST_API_BASE}/v5/pins`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,

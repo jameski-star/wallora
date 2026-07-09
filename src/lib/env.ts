@@ -74,6 +74,7 @@ export const env = {
   pinterestClientId: pick("PINTEREST_CLIENT_ID"),
   pinterestClientSecret: pick("PINTEREST_CLIENT_SECRET"),
   pinterestBoardId: pick("PINTEREST_BOARD_ID"),
+  pinterestUseSandbox: pick("PINTEREST_USE_SANDBOX") === "true",
 } as const;
 
 export const features = {
