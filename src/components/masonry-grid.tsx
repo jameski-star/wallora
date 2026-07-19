@@ -37,11 +37,13 @@ export function MasonryGrid({ wallpapers }: { wallpapers: Wallpaper[] }) {
   }
 
   return (
-    <div className="masonry">
+    <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 [column-fill:_balance]">
       {wallpapers.map((w, i) => (
-        <ScrollReveal key={w.id} index={i}>
-          <WallpaperCard w={toCard(w)} />
-        </ScrollReveal>
+        <div key={w.id} className="break-inside-avoid mb-4">
+          <ScrollReveal index={i}>
+            <WallpaperCard w={toCard(w)} />
+          </ScrollReveal>
+        </div>
       ))}
     </div>
   );
@@ -51,13 +53,14 @@ export function MasonryGrid({ wallpapers }: { wallpapers: Wallpaper[] }) {
 export function MasonrySkeleton({ count = 12 }: { count?: number }) {
   const heights = [220, 320, 260, 380, 300, 240];
   return (
-    <div className="masonry">
+    <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4 [column-fill:_balance]">
       {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="skeleton rounded-card"
-          style={{ height: heights[i % heights.length] }}
-        />
+        <div key={i} className="break-inside-avoid mb-4">
+          <div
+            className="skeleton rounded-card w-full"
+            style={{ height: heights[i % heights.length] }}
+          />
+        </div>
       ))}
     </div>
   );
