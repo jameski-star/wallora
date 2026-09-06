@@ -27,6 +27,8 @@ export interface MockupTarget {
   /** Live wallpapers: looping clip + still poster shown on the device screen. */
   videoSrc?: string | null;
   poster?: string;
+  width?: number;
+  height?: number;
 }
 
 interface MockupContextValue {
@@ -176,6 +178,8 @@ function Modal({ target, onClose }: { target: MockupTarget; onClose: () => void 
           alt={`${target.title} on a ${target.device}`}
           videoSrc={target.videoSrc}
           poster={target.poster}
+          width={target.width}
+          height={target.height}
           className="border border-border"
         />
 
@@ -216,7 +220,7 @@ function Modal({ target, onClose }: { target: MockupTarget; onClose: () => void 
 
         {target.isPremium && (
           <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-muted sm:justify-start">
-            <ShieldCheck size={14} className="shrink-0 text-emerald-400" />
+            <ShieldCheck size={14} className="shrink-0 text-accent" />
             The “Aurava” watermark is on this preview only — your download is watermark-free.
           </p>
         )}

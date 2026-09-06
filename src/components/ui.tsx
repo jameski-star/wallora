@@ -10,24 +10,25 @@ export function Container({
   className?: string;
 }) {
   return (
-    <div className={cn("mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8", className)}>
+    <div className={cn("mx-auto w-full max-w-7xl px-6 md:px-12", className)}>
       {children}
     </div>
   );
 }
 
 const buttonStyles = {
-  base: "inline-flex items-center justify-center gap-2 rounded-lg font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/60 disabled:opacity-50 disabled:pointer-events-none",
+  base: "inline-flex items-center justify-center gap-2 rounded-none font-bold tracking-widest text-xs uppercase transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-50 disabled:pointer-events-none cursor-pointer",
   variant: {
-    primary: "bg-accent text-accent-foreground font-semibold hover:opacity-90",
-    secondary: "bg-surface border border-border text-foreground hover:border-accent/50",
-    ghost: "text-muted hover:text-foreground hover:bg-surface",
+    primary: "bg-primary text-white hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/20",
+    secondary: "border border-primary text-primary hover:bg-primary hover:text-white",
+    accent: "bg-accent text-secondary hover:brightness-105",
+    ghost: "text-white/70 hover:text-accent hover:bg-white/5",
     danger: "bg-red-600 text-white hover:bg-red-500",
   },
   size: {
-    sm: "h-9 px-3 text-sm",
-    md: "h-11 px-5 text-sm",
-    lg: "h-12 px-7 text-base",
+    sm: "h-9 px-4 text-[11px]",
+    md: "h-11 px-6 text-xs",
+    lg: "h-13 px-8 text-sm",
   },
 } as const;
 
@@ -72,15 +73,15 @@ export function Badge({
   tone?: "neutral" | "accent" | "free" | "mature";
 }) {
   const tones = {
-    neutral: "bg-surface-2 text-muted border-border",
-    accent: "bg-accent/15 text-accent border-accent/30",
-    free: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-    mature: "bg-red-500/15 text-red-400 border-red-500/30",
+    neutral: "bg-[#112b4a]/90 text-white/80 border-white/15",
+    accent: "bg-[#081d37]/90 text-accent border-accent/40 font-bold",
+    free: "bg-[#081d37]/90 text-white border-white/20 font-bold",
+    mature: "bg-[#081d37]/90 text-white/70 border-white/20 font-mono",
   } as const;
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1 rounded-none border px-2.5 py-0.5 text-[10px] uppercase tracking-wider font-bold",
         tones[tone],
         className,
       )}
@@ -100,12 +101,13 @@ export function SectionHeading({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-end justify-between gap-4">
+    <div className="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-white/10 pb-4">
       <div>
-        <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h2>
-        {subtitle && <p className="mt-1 text-muted">{subtitle}</p>}
+        <div className="w-8 h-1 bg-accent mb-3" />
+        <h2 className="text-2xl font-bold tracking-tight text-white sm:text-3xl uppercase">{title}</h2>
+        {subtitle && <p className="mt-1.5 text-xs font-semibold tracking-wider text-white/60 uppercase">{subtitle}</p>}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }

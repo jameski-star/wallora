@@ -24,14 +24,14 @@ export function BuyPanel({ w }: { w: BuyTarget }) {
   const router = useRouter();
   const mockup = useMockupOptional();
   const [busy, setBusy] = useState(false);
-  const inCart = cart.has(w.id);
+  const inCart = cart.hydrated && cart.has(w.id);
   const formatPrice = useFormatPrice();
 
   if (!w.isPremium) {
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-2xl font-bold text-emerald-400">Free</span>
+          <span className="text-2xl font-bold text-white tracking-tight">Free</span>
           <ShareButton
             slug={w.slug}
             title={w.title}
@@ -119,7 +119,7 @@ export function BuyPanel({ w }: { w: BuyTarget }) {
       </Button>
 
       <p className="flex items-start gap-1.5 text-xs text-muted">
-        <ShieldCheck size={14} className="mt-px shrink-0 text-emerald-400" />
+        <ShieldCheck size={14} className="mt-px shrink-0 text-accent" />
         The “Aurava” watermark is on this preview only — your download is
         full-resolution and watermark-free.
       </p>

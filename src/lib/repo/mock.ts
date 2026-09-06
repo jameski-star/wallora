@@ -8,7 +8,7 @@ import type {
   WallpaperQuery,
 } from "../types";
 import type { Repository } from "./types";
-import { SEED_CATEGORIES } from "./seed";
+import { SEED_CATEGORIES, SEED_POSTS } from "./seed";
 
 /**
  * In-memory repository. State lives at module scope so it survives across
@@ -16,7 +16,7 @@ import { SEED_CATEGORIES } from "./seed";
  * fine for a keyless demo).
  *
  * It starts with the category taxonomy but an EMPTY catalog — no sample
- * wallpapers, featured slots, or posts are injected automatically. Admins add
+ * wallpapers or featured slots are injected automatically. Admins add
  * real content from the dashboard, or load the optional demo set with one click
  * from Admin → Setup. This keeps the live site free of placeholder data.
  */
@@ -38,7 +38,7 @@ function init(): Store {
     categories: SEED_CATEGORIES.map((c) => ({ ...c })),
     featured: new Map(),
     orders: new Map(),
-    posts: new Map(),
+    posts: new Map(SEED_POSTS.map((p) => [p.id, { ...p }])),
   };
 }
 

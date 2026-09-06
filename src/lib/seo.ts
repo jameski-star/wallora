@@ -14,35 +14,53 @@ export function abs(path: string): string {
 export const baseMetadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: `${SITE_NAME} — ${SITE_TAGLINE}`,
+    default: `${SITE_NAME} — Best 4K, OLED & Live Wallpapers for PC & Mobile`,
     template: `%s | ${SITE_NAME}`,
   },
   description:
-    "Aurava is a curated premium wallpaper marketplace offering hand-picked 4K and HD wallpapers for desktop, phone, and tablet. Browse free and premium designs across 20+ categories.",
-  keywords: ["wallpapers", "4k wallpapers", "hd wallpapers", "desktop", "phone", "premium"],
+    "Download uncompressed 4K, true OLED & live motion wallpapers. Hand-curated for PC, Mac, ultrawide & mobile screens. Zero watermarks, instant download ✓",
+  keywords: [
+    "4k wallpapers",
+    "live wallpapers",
+    "oled wallpapers",
+    "best wallpaper sites",
+    "wallpaper engine alternatives",
+    "desktop backgrounds",
+    "ultrawide wallpapers",
+    "phone wallpapers",
+    "hd backgrounds",
+    "pc setup wallpapers",
+    "dark aesthetic wallpapers",
+  ],
   // Default canonical for the home route. Sub-pages override this in their own
   // generateMetadata (e.g. wallpaperMetadata, the /wallpapers and /blog pages).
   alternates: { canonical: "/" },
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "512x512" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   openGraph: {
     type: "website",
     siteName: SITE_NAME,
     url: SITE_URL,
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
-    description: "Premium 4K & HD wallpapers for every device.",
-    // og:image is supplied automatically by the app/opengraph-image.tsx file
-    // convention (and per-wallpaper/per-post pages set their own image).
+    title: `${SITE_NAME} — Best 4K, OLED & Live Wallpapers for PC & Mobile`,
+    description:
+      "Download uncompressed 4K, true OLED & live motion wallpapers. Hand-curated for PC, Mac, ultrawide & mobile screens. Zero watermarks, instant download ✓",
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — ${SITE_TAGLINE}`,
-    description: "Premium 4K & HD wallpapers for every device.",
-    // twitter:image likewise comes from app/twitter-image.tsx.
+    title: `${SITE_NAME} — Best 4K, OLED & Live Wallpapers for PC & Mobile`,
+    description:
+      "Download uncompressed 4K, true OLED & live motion wallpapers. Hand-curated for PC, Mac, ultrawide & mobile screens. Zero watermarks, instant download ✓",
   },
   robots: {
     index: true,
     follow: true,
-    // Let Google show full-size image thumbnails and untruncated snippets —
-    // essential for an image-first catalog to win Google Images + rich results.
     googleBot: {
       index: true,
       follow: true,
@@ -51,7 +69,6 @@ export const baseMetadata: Metadata = {
       "max-video-preview": -1,
     },
   },
-  // Emits <meta name="google-site-verification"> only when the token is set.
   ...(env.googleSiteVerification
     ? { verification: { google: env.googleSiteVerification } }
     : {}),
@@ -61,38 +78,54 @@ export const baseMetadata: Metadata = {
 export function wallpaperMetadata(w: Wallpaper): Metadata {
   const url = abs(`/wallpapers/${w.slug}`);
   const image = ogImageUrl(w);
-  // Build a keyword list that includes the wallpaper's own tags plus its
-  // category and device type — these become the <meta name="keywords"> and
-  // also feed article:tag for OG consumers.
   const kw = [
     w.title,
     w.categorySlug,
     w.device,
     w.resolution,
-    w.isPremium ? "premium wallpaper" : "free wallpaper",
-    w.kind === "live" ? "live wallpaper" : "",
+    w.isPremium ? "premium wallpaper" : "free 4k wallpaper",
+    w.kind === "live" ? "live wallpaper loop" : "4k wallpaper",
+    "uncompressed wallpaper",
     ...w.tags,
   ].filter(Boolean);
+
+  const is4K = Math.max(w.width, w.height) >= 3840;
+  const resolutionLabel = is4K ? "4K UHD" : w.resolution;
+
+  // Optimized Title Formula (50–60 characters) with emotional hooks & brand anchor
+  const computedTitle =
+    w.seoTitle ||
+    (w.kind === "live"
+      ? `${w.title} · 4K Live Wallpaper Loop | ${SITE_NAME}`
+      : w.device === "phone"
+        ? `${w.title} · 4K OLED Phone Wallpaper | ${SITE_NAME}`
+        : `${w.title} · ${resolutionLabel} Wallpaper for ${w.device === "desktop" ? "Desktop" : "Tablet"} | ${SITE_NAME}`);
+
+  // Optimized Meta Description (150–160 characters) with active benefits & CTA
+  const computedDescription =
+    w.seoDescription ||
+    `Download ${w.title} in native ${w.resolution}. Hand-curated for ${w.device} displays with pristine color accuracy. ${
+      w.isPremium ? "Uncompressed original master file." : "100% free instant download."
+    } No watermarks ✓`;
+
   return {
-    title: w.seoTitle || `${w.title} Wallpaper`,
-    description: w.seoDescription || w.description,
+    title: computedTitle,
+    description: computedDescription,
     keywords: kw,
     alternates: { canonical: url },
     openGraph: {
       type: "article",
       url,
-      title: w.seoTitle || w.title,
-      description: w.seoDescription || w.description,
-      images: [{ url: image, width: 1200, height: 630, alt: w.title }],
-      // article:tag surfaces each wallpaper's tags to social crawlers,
-      // helping them categorise and surface the content.
+      title: computedTitle,
+      description: computedDescription,
+      images: [{ url: image, width: 1200, height: 630, alt: `${w.title} — ${w.resolution} Wallpaper Preview` }],
       ...(w.createdAt ? { publishedTime: w.createdAt } : {}),
       tags: kw,
     },
     twitter: {
       card: "summary_large_image",
-      title: w.seoTitle || w.title,
-      description: w.seoDescription || w.description,
+      title: computedTitle,
+      description: computedDescription,
       images: [image],
     },
   };
@@ -290,4 +323,52 @@ export function categoryItemListJsonLd(
       url: abs(`/wallpapers/${w.slug}`),
     })),
   };
+}
+
+/** FAQPage JSON-LD — emits rich schema for Google SERP collapsible FAQ accordions and AI search engines. */
+export function faqPageJsonLd(items: { question: string; answer: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((it) => ({
+      "@type": "Question",
+      name: it.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: it.answer,
+      },
+    })),
+  };
+}
+
+/** Extracts Q&A pairs from a markdown string under a 'Frequently Asked Questions' heading. */
+export function extractFaqsFromMarkdown(markdown: string): { question: string; answer: string }[] {
+  const match = markdown.match(/##\s+Frequently Asked Questions[\s\S]*$/i);
+  if (!match) return [];
+  const section = match[0];
+  const items: { question: string; answer: string }[] = [];
+
+  const h3Parts = section.split(/\n###\s+/);
+  if (h3Parts.length > 1) {
+    for (const part of h3Parts.slice(1)) {
+      const lines = part.split("\n").filter((l) => l.trim() !== "");
+      if (lines.length >= 2) {
+        const question = lines[0].replace(/\?*$/, "").trim() + "?";
+        const answerLines: string[] = [];
+        for (let j = 1; j < lines.length; j++) {
+          if (/^#{1,3}\s+/.test(lines[j])) break;
+          answerLines.push(lines[j]);
+        }
+        const answer = answerLines
+          .join(" ")
+          .replace(/[*_#`]/g, "")
+          .replace(/\s+/g, " ")
+          .trim();
+        if (question && answer) {
+          items.push({ question, answer });
+        }
+      }
+    }
+  }
+  return items.slice(0, 10);
 }

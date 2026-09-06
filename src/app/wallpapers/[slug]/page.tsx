@@ -23,7 +23,14 @@ import {
 } from "@/lib/seo";
 import { CATEGORIES } from "@/lib/constants";
 
+import type { DeviceType, WallpaperQuery } from "@/lib/types";
+
 type Params = Promise<{ slug: string }>;
+type SearchParams = Promise<{ [k: string]: string | string[] | undefined }>;
+
+function str(v: string | string[] | undefined): string | undefined {
+  return typeof v === "string" && v ? v : undefined;
+}
 
 export const unstable_instant = { prefetch: "static", unstable_disableValidation: true };
 
@@ -37,11 +44,33 @@ export async function generateMetadata({
 
   const category = await repo.getCategory(slug);
   if (category) {
+    const title = `${category.name} 4K Wallpapers · Ultra-HD Desktop & Mobile | Aurava`;
+    const description = `Download pristine ${category.name.toLowerCase()} wallpapers in native 4K UHD. Curated for multi-monitor workstations, laptops & OLED screens. Free & instant download ✓`;
+    const kw = [
+      `${category.name.toLowerCase()} wallpapers`,
+      `4k ${category.name.toLowerCase()} wallpapers`,
+      `best ${category.name.toLowerCase()} backgrounds`,
+      "4k wallpapers",
+      "desktop backgrounds",
+      "oled wallpapers",
+      "wallpaper engine alternatives",
+      category.slug,
+    ];
     return {
-      title: `${category.name} Wallpapers in 4K & HD`,
-      description: `Browse premium ${category.name.toLowerCase()} wallpapers optimized for desktop and mobile devices. ${category.description}`,
-      keywords: [category.name.toLowerCase(), `${category.name.toLowerCase()} wallpaper`, "4k wallpaper", "hd wallpaper", category.slug],
+      title,
+      description,
+      keywords: kw,
       alternates: { canonical: `/wallpapers/${slug}` },
+      openGraph: {
+        type: "website",
+        title,
+        description,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title,
+        description,
+      },
     };
   }
 
@@ -53,7 +82,13 @@ export async function generateMetadata({
   notFound();
 }
 
-export default function SlugPage({ params }: { params: Params }) {
+export default function SlugPage({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
   return (
     <Suspense
       fallback={
@@ -69,21 +104,40 @@ export default function SlugPage({ params }: { params: Params }) {
         </Container>
       }
     >
-      <SlugContent params={params} />
+      <SlugContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function SlugContent({ params }: { params: Params }) {
+async function SlugContent({
+  params,
+  searchParams,
+}: {
+  params: Params;
+  searchParams: SearchParams;
+}) {
   const { slug } = await params;
+  const sp = await searchParams;
   const repo = await getRepo();
 
   // 1) Category listing?
   const category = await repo.getCategory(slug);
   if (category) {
+    const query: WallpaperQuery = {
+      category: slug,
+      device: str(sp.device) as DeviceType | undefined,
+      tag: str(sp.tag),
+      kind: str(sp.kind) as WallpaperQuery["kind"],
+      search: str(sp.search),
+      premium:
+        sp.premium === "true" ? true : sp.premium === "false" ? false : undefined,
+      sort: (str(sp.sort) as WallpaperQuery["sort"]) ?? "newest",
+      limit: 60,
+    };
+
     const [wallpapers, total] = await Promise.all([
-      listWallpapers({ category: slug, sort: "newest", limit: 60 }),
-      countWallpapers({ category: slug }),
+      listWallpapers(query),
+      countWallpapers(query),
     ]);
     const meta = CATEGORIES.find((c) => c.slug === slug);
     return (
@@ -99,7 +153,24 @@ async function SlugContent({ params }: { params: Params }) {
         <div className="mt-4 mb-6 max-w-3xl text-sm leading-relaxed text-muted/95 bg-surface-2/40 p-4 rounded-card border border-border/55">
           <p>{categoryIntro(category.slug, category.name, meta?.description)}</p>
         </div>
-        <p className="mb-6 text-sm text-muted font-medium">{total} wallpapers found</p>
+        <p className="mb-4 text-sm text-muted font-medium">
+          {total} wallpaper{total === 1 ? "" : "s"} found
+        </p>
+
+        {/* Horizontal Related Categories Strip for Authority Distribution */}
+        <nav aria-label="Related categories" className="mb-6 flex flex-wrap items-center gap-1.5">
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted mr-1">Other collections:</span>
+          {CATEGORIES.filter((c) => c.slug !== slug).slice(0, 7).map((c) => (
+            <Link
+              key={c.slug}
+              href={`/wallpapers/${c.slug}`}
+              className="rounded-full border border-border/80 bg-surface px-3 py-1 text-xs text-muted hover:border-accent/40 hover:text-foreground transition-colors"
+            >
+              {c.name}
+            </Link>
+          ))}
+        </nav>
+
         <div className="mb-6">
           <Filters lockedCategory={slug} />
         </div>
@@ -149,6 +220,8 @@ async function SlugContent({ params }: { params: Params }) {
           previewSrc: previewUrl(w, { width: 1200, quality: 70 }),
           videoSrc: w.kind === "live" ? videoPreviewUrl(w, { width: 1000 }) : null,
           poster: previewUrl(w, { width: 1200, quality: 60 }),
+          width: w.width,
+          height: w.height,
         }}
       >
       <div className="grid gap-8 lg:grid-cols-[1.6fr_1fr]">
@@ -226,6 +299,35 @@ async function SlugContent({ params }: { params: Params }) {
               }}
             />
           </div>
+
+          {/* Contextual Guide Link: Asset -> Cluster Link */}
+          {w.kind === "live" && (
+            <div className="rounded-card border border-accent/30 bg-accent/5 p-4 text-xs text-muted leading-relaxed">
+              <span className="font-semibold text-foreground block mb-1">Looking to install this live loop?</span>
+              Follow our step-by-step tutorial on{" "}
+              <Link
+                href="/blog/how-to-set-live-wallpapers-windows-mac"
+                className="font-medium text-accent underline underline-offset-2 hover:opacity-80"
+              >
+                setting live wallpapers on Windows 11 &amp; Mac without lag
+              </Link>
+              .
+            </div>
+          )}
+
+          {w.categorySlug === "dark" && (
+            <div className="rounded-card border border-border/80 bg-surface/70 p-4 text-xs text-muted leading-relaxed">
+              <span className="font-semibold text-foreground block mb-1">Optimized for OLED &amp; AMOLED displays</span>
+              Discover how true pitch-black pixels save battery power in our{" "}
+              <Link
+                href="/blog/choosing-the-right-resolution"
+                className="font-medium text-accent underline underline-offset-2 hover:opacity-80"
+              >
+                OLED resolution and display guide
+              </Link>
+              .
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-2">
             {w.tags.map((t) => (

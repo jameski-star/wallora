@@ -25,6 +25,8 @@ export function StudioMockup({
   poster,
   priority,
   className,
+  width,
+  height,
 }: {
   device: string;
   src: string;
@@ -33,8 +35,11 @@ export function StudioMockup({
   poster?: string;
   priority?: boolean;
   className?: string;
+  width?: number;
+  height?: number;
 }) {
   const screen = <Screen src={src} alt={alt} videoSrc={videoSrc} poster={poster} priority={priority} />;
+  const aspect = width && height ? `${width} / ${height}` : undefined;
 
   return (
     <div
@@ -47,11 +52,11 @@ export function StudioMockup({
       )}
     >
       {device === "phone" ? (
-        <PhoneFrame>{screen}</PhoneFrame>
+        <PhoneFrame aspectRatio={aspect}>{screen}</PhoneFrame>
       ) : device === "tablet" ? (
-        <TabletFrame>{screen}</TabletFrame>
+        <TabletFrame aspectRatio={aspect}>{screen}</TabletFrame>
       ) : (
-        <LaptopFrame>{screen}</LaptopFrame>
+        <LaptopFrame aspectRatio={aspect}>{screen}</LaptopFrame>
       )}
     </div>
   );
@@ -80,9 +85,12 @@ function CastShadow({ className }: { className?: string }) {
   );
 }
 
-function PhoneFrame({ children }: { children: React.ReactNode }) {
+function PhoneFrame({ children, aspectRatio }: { children: React.ReactNode; aspectRatio?: string }) {
   return (
-    <div className="relative h-[60svh] max-h-[560px] min-h-[360px] aspect-[9/19.5]">
+    <div
+      className="relative h-[60svh] max-h-[560px] min-h-[360px]"
+      style={{ aspectRatio: aspectRatio ?? "9/19.5" }}
+    >
       <CastShadow className="bottom-[-6%] h-[7%] w-[62%]" />
       {/* Side buttons. */}
       <span aria-hidden className="absolute -left-[2px] top-[22%] h-12 w-[3px] rounded-l bg-surface-2" />
@@ -102,9 +110,12 @@ function PhoneFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function TabletFrame({ children }: { children: React.ReactNode }) {
+function TabletFrame({ children, aspectRatio }: { children: React.ReactNode; aspectRatio?: string }) {
   return (
-    <div className="relative h-[58svh] max-h-[600px] min-h-[340px] aspect-[3/4]">
+    <div
+      className="relative h-[58svh] max-h-[600px] min-h-[340px]"
+      style={{ aspectRatio: aspectRatio ?? "3/4" }}
+    >
       <CastShadow className="bottom-[-5%] h-[6%] w-[70%]" />
       <div className="relative h-full w-full rounded-[1.6rem] bg-[linear-gradient(145deg,color-mix(in_oklch,var(--surface-2)_60%,white_16%),var(--surface-2)_45%,color-mix(in_oklch,var(--surface-2)_70%,black_22%))] p-[3px] shadow-2xl ring-1 ring-black/30">
         <div className="relative h-full w-full overflow-hidden rounded-[1.45rem] bg-black p-3">
@@ -120,12 +131,15 @@ function TabletFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function LaptopFrame({ children }: { children: React.ReactNode }) {
+function LaptopFrame({ children, aspectRatio }: { children: React.ReactNode; aspectRatio?: string }) {
   return (
     <div className="relative w-full max-w-[min(86vw,60rem)]">
       <CastShadow className="bottom-[-14%] h-[14%] w-[88%]" />
       {/* Lid. */}
-      <div className="relative aspect-[16/10] w-full rounded-t-2xl bg-[linear-gradient(160deg,color-mix(in_oklch,var(--surface-2)_55%,white_15%),var(--surface-2)_50%,color-mix(in_oklch,var(--surface-2)_70%,black_22%))] p-[10px] shadow-2xl ring-1 ring-black/30">
+      <div
+        className="relative w-full rounded-t-2xl bg-[linear-gradient(160deg,color-mix(in_oklch,var(--surface-2)_55%,white_15%),var(--surface-2)_50%,color-mix(in_oklch,var(--surface-2)_70%,black_22%))] p-[10px] shadow-2xl ring-1 ring-black/30"
+        style={{ aspectRatio: aspectRatio ?? "16/10" }}
+      >
         <div className="protected-img relative h-full w-full overflow-hidden rounded-md bg-black">
           {children}
           {/* Webcam dot. */}
@@ -160,9 +174,25 @@ function Screen({
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (reduce) v.pause();
-    else v.play().catch(() => {});
-  }, [reduce]);
+    v.defaultMuted = true;
+    v.muted = true;
+    if (reduce) {
+      v.pause();
+    } else {
+      const p = v.play();
+      if (p !== undefined) {
+        p.catch(() => {
+          v.addEventListener(
+            "canplay",
+            () => {
+              v.play().catch(() => {});
+            },
+            { once: true },
+          );
+        });
+      }
+    }
+  }, [reduce, videoSrc]);
 
   if (videoSrc) {
     return (

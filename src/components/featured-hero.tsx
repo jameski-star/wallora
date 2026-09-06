@@ -2,22 +2,92 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Sparkles, ArrowRight, Info, X, Monitor, Smartphone, Tablet } from "lucide-react";
-import { StudioMockup } from "./studio-mockup";
+import { ArrowRight, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { motion, AnimatePresence } from "motion/react";
+import { ProtectedImage } from "./protected-image";
+import Image from "next/image";
+import { BentMockup } from "./bent-mockup";
+import { CosineWaveNet } from "./cosine-net";
 
-/**
- * Premium device-mockup hero for Wallpaper of the Day / Week.
- *
- * Desktop: two-column — minimal info (badge + title + CTA) left, floating
- * device mockup right inside a warm ambient room scene (lamp glow, plant,
- * shelf line). The wallpaper lives entirely inside the device screen.
- *
- * Mobile: device mockup fills the section. Badge + title shown above. Tapping
- * "Details" reveals a floating bottom-sheet with description and CTA while the
- * wallpaper remains fully visible inside the device.
- */
+interface FeaturedWallpaperItem {
+  slug: string;
+  title: string;
+  caption: string;
+  description: string;
+  previewSrc: string;
+  width: number;
+  height: number;
+  device?: string;
+  targetDevice?: "mobile" | "desktop";
+  videoSrc?: string | null;
+  isPremium?: boolean;
+  category?: string;
+}
+
+const FALLBACK_WALLPAPERS: FeaturedWallpaperItem[] = [
+  {
+    slug: "cyberpunk-neon-street",
+    title: "Cyberpunk Neon Street",
+    caption: "Wallpaper of the Day",
+    description: "A rain-slicked city alley illuminated by futuristic holographic advertisements and neon signs.",
+    previewSrc: "https://images.unsplash.com/photo-1515621061946-eff1c2a352bd?q=80&w=800&auto=format&fit=crop",
+    width: 3840,
+    height: 2160,
+    device: "desktop",
+    targetDevice: "desktop",
+    videoSrc: null,
+    isPremium: true,
+    category: "Sci-Fi",
+  },
+  {
+    slug: "minimalist-mountain-fog",
+    title: "Minimalist Mountain Fog",
+    caption: "Featured Drop",
+    description: "Serene layers of misty forest mountains in deep slate blue tones. Perfect for minimalist setups.",
+    previewSrc: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=800&auto=format&fit=crop",
+    width: 1440,
+    height: 3120,
+    device: "phone",
+    targetDevice: "mobile",
+    videoSrc: null,
+    isPremium: false,
+    category: "Nature",
+  },
+  {
+    slug: "abstract-liquid-glass",
+    title: "Abstract Liquid Glass",
+    caption: "Trending Live",
+    description: "Flowing iridescent glass waves that play with light reflections. Modern glassmorphism art.",
+    previewSrc: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=800&auto=format&fit=crop",
+    width: 3840,
+    height: 2400,
+    device: "desktop",
+    targetDevice: "desktop",
+    videoSrc: null,
+    isPremium: true,
+    category: "Abstract",
+  },
+  {
+    slug: "lofi-cozy-room",
+    title: "Cozy Lo-Fi Study Room",
+    caption: "Wallpaper of the Week",
+    description: "Relaxing late-night pixel-art scene with a rainy window, a sleeping cat, and coffee.",
+    previewSrc: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=800&auto=format&fit=crop",
+    width: 1080,
+    height: 2400,
+    device: "phone",
+    targetDevice: "mobile",
+    videoSrc: null,
+    isPremium: false,
+    category: "Anime",
+  }
+];
+
+const DATA_BAR_HEIGHTS = [14, 19, 9, 21, 12, 17, 24, 10, 20, 15, 23, 16];
+
 export function FeaturedHero({
+  wallpapers,
   slug,
   title,
   caption,
@@ -29,248 +99,327 @@ export function FeaturedHero({
   videoSrc,
   isPremium = false,
   category,
-  titleAs: TitleTag = "h2",
   priority = false,
 }: {
-  slug: string;
-  title: string;
-  caption: string;
-  description: string;
-  previewSrc: string;
-  width: number;
-  height: number;
+  wallpapers?: FeaturedWallpaperItem[];
+  slug?: string;
+  title?: string;
+  caption?: string;
+  description?: string;
+  previewSrc?: string;
+  width?: number;
+  height?: number;
   device?: string;
   videoSrc?: string | null;
   isPremium?: boolean;
   category?: string;
-  titleAs?: "h1" | "h2";
-  /** Mark the hero image as LCP — preloads + fetchpriority=high. */
   priority?: boolean;
 }) {
-  const [infoOpen, setInfoOpen] = useState(false);
-  const deviceType = device === "phone" ? "phone" : device === "tablet" ? "tablet" : "laptop";
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
+
+  const items: FeaturedWallpaperItem[] = (
+    wallpapers && wallpapers.length > 0
+      ? wallpapers
+      : slug
+      ? [
+          {
+            slug,
+            title: title || "",
+            caption: caption || "",
+            description: description || "",
+            previewSrc: previewSrc || "",
+            width: width || 1920,
+            height: height || 1080,
+            device,
+            videoSrc,
+            isPremium,
+            category,
+          },
+        ]
+      : FALLBACK_WALLPAPERS
+  ).map((item) => ({
+    ...item,
+    targetDevice:
+      item.targetDevice ||
+      (item.device === "phone" || item.device === "tablet" || item.device === "mobile"
+        ? "mobile"
+        : "desktop"),
+  }));
+
+  const currentItem = items[currentIndex];
+
+  const handlePrev = () => {
+    setDirection(-1);
+    setCurrentIndex((prev) => (prev === 0 ? items.length - 1 : prev - 1));
+  };
+
+  const handleNext = () => {
+    setDirection(1);
+    setCurrentIndex((prev) => (prev === items.length - 1 ? 0 : prev + 1));
+  };
+
+  if (!currentItem) return null;
+
+  const variants = {
+    enter: (dir: number) => ({
+      x: dir > 0 ? 80 : -80,
+      opacity: 0,
+      scale: 0.98,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+    },
+    exit: (dir: number) => ({
+      x: dir > 0 ? -80 : 80,
+      opacity: 0,
+      scale: 0.98,
+    }),
+  };
 
   return (
-    <section className="relative overflow-hidden rounded-card border border-border bg-surface">
-      {/* ── Desktop: side-by-side ──────────────────────────────────── */}
-      <div className="hidden lg:grid lg:grid-cols-2 lg:items-center lg:gap-2">
-        {/* Left — premium info panel with ambient glow */}
-        <div className="relative flex flex-col justify-center px-10 py-12">
-          {/* Ambient accent glow — warm radial echoing the logo */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 -z-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 80% 60% at 30% 40%, color-mix(in oklch, var(--accent) 6%, transparent), transparent)",
-            }}
-          />
+    <section className="relative w-full overflow-hidden bg-[#081d37] pt-28 pb-16 md:pt-36 md:pb-24 border-b border-white/10">
+      {/* CME Bokeh & Ambient Cyan Glow */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div 
+          className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-screen scale-105 transition-all duration-1000"
+          style={{ 
+            backgroundImage: `url('${currentItem.previewSrc}')`,
+            filter: 'blur(40px) saturate(1.8)'
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#081d37]/80 via-[#081d37]/70 to-[#081d37]" />
 
-          <div className="relative z-10">
-            <span className="mb-5 inline-flex w-fit items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-accent">
-              <Sparkles size={13} />
-              {caption}
-            </span>
+        {/* Parametric Cosine-Sine Math Net Background */}
+        <CosineWaveNet
+          amplitude={26}
+          speed={0.0015}
+          cols={44}
+          rows={26}
+          opacity={0.42}
+          baseColor="0, 110, 182"
+          peakColor="56, 189, 248"
+          fadePreset="hero-spotlight"
+        />
+        
+        {/* Right-aligned CME Visual Grid Accent */}
+        <div className="absolute right-0 top-0 w-full lg:w-1/3 h-full opacity-25 hidden md:block">
+          <div className="grid grid-cols-12 gap-2 h-full px-6">
+            {DATA_BAR_HEIGHTS.map((barCount, i) => (
+              <div key={i} className="flex flex-col justify-end gap-1 pb-16">
+                {Array.from({ length: barCount }).map((_, j) => (
+                  <div 
+                    key={j} 
+                    className="w-full h-1 bg-accent rounded-none"
+                    style={{ opacity: (j + 1) / barCount }}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
 
-            <TitleTag className="text-balance text-3xl font-bold leading-tight tracking-tight text-foreground xl:text-4xl">
-              {title}
-            </TitleTag>
-
-            {/* Resolution + device specs */}
-            <div className="mt-4 flex items-center gap-3 text-xs text-muted/80">
-              <span className="inline-flex items-center gap-1.5 font-mono tabular-nums">
-                {width} × {height}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 w-full">
+        {/* Top Minimal Header: 90% Picture focus, minimal text */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-accent text-[11px] font-black tracking-[0.25em] uppercase flex items-center gap-2">
+                <span className="size-2 bg-accent animate-pulse" />
+                {currentItem.caption || "WALLPAPER OF THE DAY"}
               </span>
-              <span className="h-3 w-px bg-border" />
-              <span className="inline-flex items-center gap-1">
-                {deviceType === "phone" ? (
-                  <Smartphone size={12} />
-                ) : deviceType === "tablet" ? (
-                  <Tablet size={12} />
-                ) : (
-                  <Monitor size={12} />
-                )}
-                {deviceType === "phone" ? "Phone" : deviceType === "tablet" ? "Tablet" : "Desktop"}
-              </span>
-            </div>
-
-            {/* Category + price badges */}
-            <div className="mt-3 flex items-center gap-2">
-              {category && (
-                <span className="rounded-full bg-surface-2/80 px-2.5 py-0.5 text-[11px] font-medium capitalize text-muted">
-                  {category}
-                </span>
-              )}
-              <span
-                className={cn(
-                  "rounded-full px-2.5 py-0.5 text-[11px] font-semibold",
-                  isPremium
-                    ? "bg-accent/15 text-accent"
-                    : "bg-emerald-500/10 text-emerald-500",
-                )}
-              >
-                {isPremium ? "Premium" : "Free"}
+              <span className="text-white/30 text-xs">|</span>
+              <span className="text-white/70 text-[11px] font-bold tracking-widest uppercase">
+                {currentItem.category || "4K UHD"}
               </span>
             </div>
-
-            {/* Accent divider */}
-            <div className="mt-6 h-px w-14 rounded-full bg-accent/30" />
-
-            <Link
-              href={`/wallpapers/${slug}`}
-              className="group mt-6 inline-flex w-fit items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-3xl sm:text-5xl lg:text-6xl font-light text-white tracking-tight leading-tight"
             >
-              View wallpaper
-              <ArrowRight
-                size={16}
-                className="transition group-hover:translate-x-0.5"
-              />
+              Where digital art <span className="font-normal text-white">meets display perfection.</span>
+            </motion.h1>
+          </div>
+
+          {/* Quick Action & Controls */}
+          <div className="flex items-center gap-4 shrink-0">
+            <Link
+              href={`/wallpapers/${currentItem.slug}`}
+              className="px-6 py-3 bg-primary text-white font-bold tracking-widest text-xs uppercase hover:bg-primary/90 transition-all flex items-center gap-2 shadow-lg shadow-primary/30"
+            >
+              GET 4K WALLPAPER
+              <ArrowRight className="w-4 h-4" />
             </Link>
+
+            {items.length > 1 && (
+              <div className="flex items-center gap-1 bg-[#112b4a] border border-white/10 p-1">
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-label="Previous"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-[11px] font-mono tracking-widest text-white/70 px-2">
+                  {String(currentIndex + 1).padStart(2, "0")}/{String(items.length).padStart(2, "0")}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="p-2 text-white/70 hover:text-white hover:bg-white/10 transition-colors"
+                  aria-label="Next"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right — ambient room scene with device mockup */}
-        <div className="relative flex items-center justify-center p-6">
-          <AmbientScene />
-          <StudioMockup
-            device={deviceType}
-            src={previewSrc}
-            alt={title}
-            videoSrc={videoSrc}
-            poster={previewSrc}
-          />
-        </div>
-      </div>
+        {/* ── MASSIVE 90% PICTURE SHOWCASE STAGE ───────────────────────── */}
+        <div className="relative w-full">
+          <AnimatePresence initial={false} custom={direction} mode="wait">
+            <motion.div
+              key={currentIndex}
+              custom={direction}
+              variants={variants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              className="relative w-full min-h-[480px] sm:min-h-[520px] md:min-h-[580px] lg:min-h-[620px] aspect-[16/10] md:aspect-[21/9] bg-[#112b4a] border border-white/10 shadow-2xl overflow-hidden group flex items-center justify-center lg:justify-end"
+            >
+              {currentItem.videoSrc ? (
+                <video
+                  ref={(el) => {
+                    if (el) {
+                      el.defaultMuted = true;
+                      el.muted = true;
+                      el.play().catch(() => {});
+                    }
+                  }}
+                  src={currentItem.videoSrc}
+                  poster={currentItem.previewSrc}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  className="absolute inset-0 h-full w-full object-cover pointer-events-none"
+                />
+              ) : (
+                <ProtectedImage
+                  src={currentItem.previewSrc}
+                  alt={currentItem.title}
+                  width={currentItem.width || 1920}
+                  height={currentItem.height || 1080}
+                  fill
+                  fit="cover"
+                  sizes="(max-width: 1280px) 100vw, 1400px"
+                  priority={priority}
+                  className="h-full w-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                />
+              )}
 
-      {/* ── Mobile / Tablet: device-focused ───────────────────────── */}
-      <div className="lg:hidden">
-        {/* Always-visible: badge + title */}
-        <div className="flex items-center gap-3 px-5 pt-5 sm:px-7 sm:pt-6">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent">
-            <Sparkles size={11} />
-            {caption}
-          </span>
-        </div>
-        <TitleTag className="px-5 pt-3 pb-2 text-xl font-bold tracking-tight text-foreground sm:px-7 sm:text-2xl">
-          {title}
-        </TitleTag>
+              {/* Atmospheric subtle vignette for depth while keeping wallpaper 100% visible */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#081d37]/90 via-[#081d37]/30 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#081d37] via-transparent to-black/30 pointer-events-none" />
 
-        {/* Device mockup — wallpaper stays inside the screen */}
-        <div className="relative flex items-center justify-center px-4 py-6 sm:px-8 sm:py-8">
-          <AmbientScene />
-          <StudioMockup
-            device={deviceType}
-            src={previewSrc}
-            alt={title}
-            videoSrc={videoSrc}
-            poster={previewSrc}
-            priority={priority}
-          />
-        </div>
-
-        {/* Tap-to-reveal details button */}
-        <div className="flex justify-center pb-5">
-          <button
-            type="button"
-            onClick={() => setInfoOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-2/60 px-5 py-2 text-xs font-medium text-muted backdrop-blur-sm transition hover:text-foreground"
-          >
-            <Info size={14} />
-            Details
-          </button>
-        </div>
-
-        {/* Floating info sheet (mobile only) */}
-        {infoOpen && (
-          <>
-            <div
-              className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm"
-              onClick={() => setInfoOpen(false)}
-            />
-            <div className="fixed inset-x-0 bottom-0 z-50 animate-[slideUp_0.35s_ease-out] rounded-t-2xl border-t border-border bg-surface p-6 shadow-2xl">
-              <div className="mb-4 flex items-start justify-between gap-4">
-                <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-accent">
-                    <Sparkles size={11} />
-                    {caption}
-                  </span>
-                  <h3 className="mt-2 text-lg font-bold tracking-tight">{title}</h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setInfoOpen(false)}
-                  className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 text-muted transition hover:text-foreground"
-                >
-                  <X size={16} />
-                </button>
+              {/* Floating 3D Angled / Bent Device Mockup Stage */}
+              <div className="relative z-20 w-full sm:w-auto px-4 sm:px-8 lg:pr-16 flex items-center justify-center lg:justify-end pb-16 lg:pb-0">
+                <BentMockup
+                  device={currentItem.device || currentItem.targetDevice}
+                  src={currentItem.previewSrc}
+                  alt={currentItem.title}
+                  videoSrc={currentItem.videoSrc}
+                  width={currentItem.width}
+                  height={currentItem.height}
+                  allowToggle={true}
+                  priority={priority}
+                  className="scale-90 sm:scale-95 lg:scale-100 origin-center lg:origin-right"
+                />
               </div>
-              <p className="text-sm leading-relaxed text-muted">{description}</p>
-              <Link
-                href={`/wallpapers/${slug}`}
-                className="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-5 py-3 text-sm font-semibold text-accent-foreground transition hover:opacity-90"
-              >
-                View wallpaper
-                <ArrowRight size={16} />
-              </Link>
+
+              {/* Minimal floating overlay badges */}
+              <div className="absolute top-4 left-4 z-20 flex gap-2">
+                <span className="px-3 py-1 bg-[#112b4a]/90 backdrop-blur-md border border-white/20 text-xs font-mono font-bold text-white tracking-wider uppercase">
+                  {currentItem.width} × {currentItem.height}
+                </span>
+                {currentItem.isPremium && (
+                  <span className="px-3 py-1 backdrop-blur-md border text-xs font-bold uppercase tracking-widest inline-flex items-center gap-1.5 bg-black/80 border-accent/40 text-accent font-black">
+                    <span className="size-1.5 rounded-full bg-accent animate-pulse" />
+                    PRO 4K
+                  </span>
+                )}
+              </div>
+
+              {/* Bottom Image Overlay Strip with Title and Quick Details */}
+              <div className="absolute inset-x-0 bottom-0 p-6 md:p-8 bg-gradient-to-t from-[#081d37] via-[#081d37]/80 to-transparent flex flex-col md:flex-row md:items-end justify-between gap-4 z-20 pointer-events-none">
+                <div className="pointer-events-auto max-w-lg">
+                  <div className="w-12 h-1 bg-accent mb-2" />
+                  <h2 className="text-2xl md:text-3xl font-bold text-white tracking-wide uppercase drop-shadow-md">
+                    {currentItem.title}
+                  </h2>
+                  <p className="text-xs text-white/80 max-w-xl line-clamp-1 mt-1 font-medium">
+                    {currentItem.description}
+                  </p>
+                </div>
+
+                <Link
+                  href={`/wallpapers/${currentItem.slug}`}
+                  className="inline-flex items-center gap-2 text-accent font-bold tracking-widest text-xs uppercase hover:underline shrink-0 pointer-events-auto"
+                >
+                  FULL RESOLUTION PREVIEW <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* ── VISUAL THUMBNAIL STRIP (90% Picture Experience) ────────── */}
+          {items.length > 1 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+              {items.map((it, idx) => (
+                <button
+                  key={it.slug + idx}
+                  type="button"
+                  onClick={() => {
+                    setDirection(idx > currentIndex ? 1 : -1);
+                    setCurrentIndex(idx);
+                  }}
+                  className={cn(
+                    "relative aspect-[16/9] overflow-hidden border transition-all duration-300 text-left cursor-pointer group",
+                    idx === currentIndex
+                      ? "border-accent ring-2 ring-accent/30 scale-[1.02]"
+                      : "border-white/10 opacity-60 hover:opacity-100 hover:border-white/40"
+                  )}
+                >
+                  <Image
+                    src={it.previewSrc}
+                    alt={it.title}
+                    fill
+                    sizes="300px"
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#081d37] via-transparent to-transparent opacity-80" />
+                  <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+                    <span className="text-[10px] font-bold text-white uppercase truncate tracking-wider">
+                      {it.title}
+                    </span>
+                    {idx === currentIndex && (
+                      <span className="size-1.5 rounded-full bg-accent" />
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
     </section>
-  );
-}
-
-/**
- * CSS-only ambient room elements that surround the device mockup on desktop:
- *  - Warm lamp glow (soft radial behind the device)
- *  - Minimal plant silhouette (left side)
- *  - Coffee mug (right side)
- *  - Subtle floating bokeh dots
- *  - Desk/shelf line
- * Gives the hero a "natural workspace" feel rather than a sterile product shot.
- */
-function AmbientScene() {
-  return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-      {/* Warm lamp glow — a soft pool of amber light behind the device */}
-      <div className="absolute right-[12%] top-[8%] h-48 w-48 rounded-full bg-accent/12 blur-[80px]" />
-      <div className="absolute right-[18%] top-[12%] h-24 w-24 rounded-full bg-accent/8 blur-[40px]" />
-
-      {/* Desk line — a thin horizontal surface the device "sits" on */}
-      <div className="absolute bottom-[18%] left-[8%] right-[8%] h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
-
-      {/* Plant — left side of desk, pure CSS leaves */}
-      <div className="absolute bottom-[16%] left-[6%] flex flex-col items-center">
-        {/* Leaves */}
-        <div className="relative h-14 w-10">
-          <span className="absolute left-1/2 top-0 h-8 w-3 -translate-x-1/2 rotate-[-18deg] rounded-full bg-emerald-600/25" />
-          <span className="absolute left-1/2 top-1 h-7 w-2.5 -translate-x-1/2 rotate-[15deg] rounded-full bg-emerald-500/20" />
-          <span className="absolute left-1/2 top-2 h-6 w-2 -translate-x-[30%] rotate-[-35deg] rounded-full bg-emerald-700/20" />
-          <span className="absolute left-1/2 top-1 h-7 w-2.5 -translate-x-[70%] rotate-[30deg] rounded-full bg-emerald-600/18" />
-        </div>
-        {/* Pot */}
-        <div className="h-5 w-6 rounded-b-md bg-surface-2/60" style={{ clipPath: "polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%)" }} />
-      </div>
-
-      {/* Coffee mug — right side of desk */}
-      <div className="absolute bottom-[16%] right-[10%]">
-        <div className="relative">
-          {/* Mug body */}
-          <div className="h-7 w-5 rounded-b-md bg-surface-2/50" />
-          {/* Handle */}
-          <span className="absolute -right-1.5 top-1 h-4 w-2 rounded-r-full border border-surface-2/40 border-l-0" />
-          {/* Steam wisps */}
-          <span className="absolute -top-3 left-1/2 h-3 w-px -translate-x-1/2 animate-pulse bg-gradient-to-t from-muted/20 to-transparent" />
-          <span className="absolute -top-4 left-[40%] h-4 w-px animate-pulse bg-gradient-to-t from-muted/15 to-transparent [animation-delay:0.6s]" />
-        </div>
-      </div>
-
-      {/* Bokeh dots — soft floating light particles */}
-      <div className="absolute left-[20%] top-[20%] h-2 w-2 rounded-full bg-accent/10 blur-[2px]" />
-      <div className="absolute right-[25%] top-[30%] h-1.5 w-1.5 rounded-full bg-accent/8 blur-[1px]" />
-      <div className="absolute left-[35%] top-[15%] h-1 w-1 rounded-full bg-foreground/6" />
-      <div className="absolute right-[15%] top-[55%] h-1.5 w-1.5 rounded-full bg-accent/6 blur-[2px]" />
-      <div className="absolute left-[12%] top-[50%] h-1 w-1 rounded-full bg-foreground/5" />
-    </div>
   );
 }

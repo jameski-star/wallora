@@ -22,6 +22,15 @@ export default function CartPage() {
   const shown = cart.lines.slice(0, visible);
   const remaining = cart.count - shown.length;
 
+  if (!cart.hydrated) {
+    return (
+      <Container className="py-8 sm:py-12">
+        <h1 className="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">Your cart</h1>
+        <div className="skeleton h-64 w-full rounded-card" />
+      </Container>
+    );
+  }
+
   return (
     <Container className="py-8 sm:py-12">
       <h1 className="mb-6 text-2xl font-bold tracking-tight sm:text-3xl">Your cart</h1>

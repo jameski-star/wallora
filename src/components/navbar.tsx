@@ -1,13 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { Search, ShoppingBag, User, Menu, X, Shield } from "lucide-react";
-import { ThemeToggle } from "./theme-toggle";
+import { useState, useEffect } from "react";
+import { Search, ShoppingBag, User, Menu, X as CloseIcon, Shield } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { useCart } from "./cart";
-import { Container } from "./ui";
+import { BrandLogo } from "./brand-logo";
 import { CATEGORIES, SITE_NAME } from "@/lib/constants";
 
 export function Navbar({
@@ -19,149 +18,243 @@ export function Navbar({
 }) {
   const cart = useCart();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState("");
+  const [mounted, setMounted] = useState(false);
 
-  function search(e: React.FormEvent) {
+  useEffect(() => {
+    setMounted(true);
+    const handleScroll = () => setIsScrolled(window.scrollY > 40);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     router.push(q.trim() ? `/wallpapers?search=${encodeURIComponent(q.trim())}` : "/wallpapers");
-    setOpen(false);
+    setMobileMenuOpen(false);
+    setSearchOpen(false);
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border glass">
-      <Container className="flex h-16 items-center gap-4">
-        <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
-          <Image src="/logo.png" alt="" width={32} height={32} className="rounded-lg" />
-          <span className="text-lg tracking-tight font-bold">{SITE_NAME}</span>
-        </Link>
-
-        <nav className="hidden items-center gap-1 lg:flex">
-          <Link href="/wallpapers" className="rounded-lg px-3 py-2 text-sm text-muted transition hover:text-foreground">
-            Browse
-          </Link>
-          <Link
-            href="/wallpapers?kind=live"
-            className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted transition hover:text-foreground"
-          >
-            <span className="relative grid size-2 place-items-center" aria-hidden>
-              <span className="absolute size-2 animate-ping rounded-full bg-accent opacity-75" />
-              <span className="size-1.5 rounded-full bg-accent" />
-            </span>
-            Live
-          </Link>
-          {CATEGORIES.slice(0, 3).map((c) => (
-            <Link
-              key={c.slug}
-              href={`/wallpapers/${c.slug}`}
-              className="rounded-lg px-3 py-2 text-sm text-muted transition hover:text-foreground"
-            >
-              {c.name}
-            </Link>
-          ))}
-          <Link href="/blog" className="rounded-lg px-3 py-2 text-sm text-muted transition hover:text-foreground">
-            Blog
-          </Link>
-        </nav>
-
-        <form onSubmit={search} className="ml-auto hidden flex-1 max-w-xs items-center md:flex">
-          <div className="relative w-full">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search wallpapers…"
-              className="h-10 w-full rounded-lg border border-border bg-surface pl-9 pr-3 text-sm outline-none transition focus:border-accent/60"
-            />
-          </div>
-        </form>
-
-        <div className="ml-auto flex items-center gap-2 md:ml-0">
-          <ThemeToggle />
-
-          <Link
-            href="/cart"
-            aria-label="Cart"
-            className="relative grid size-9 place-items-center rounded-lg border border-border bg-surface text-muted transition hover:text-foreground"
-          >
-            <ShoppingBag size={18} />
-            {cart.count > 0 && (
-              <span className="absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full bg-accent px-1 text-[11px] font-semibold tabular-nums text-accent-foreground">
-                {cart.count}
-              </span>
-            )}
-          </Link>
-
-          {isAdmin && (
-            <Link
-              href="/admin-dash"
-              aria-label="Admin"
-              className="hidden size-9 place-items-center rounded-lg border border-border bg-surface text-muted transition hover:text-foreground sm:grid"
-            >
-              <Shield size={18} />
-            </Link>
-          )}
-
-          <Link
-            href={displayName ? "/account" : "/login"}
-            className="hidden items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground transition hover:border-accent/50 sm:flex"
-          >
-            <User size={16} />
-            {displayName ? displayName.split(" ")[0] : "Sign in"}
-          </Link>
-
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            className="grid size-9 place-items-center rounded-lg border border-border bg-surface text-muted lg:hidden"
-            aria-label="Menu"
-          >
-            {open ? <X size={18} /> : <Menu size={18} />}
-          </button>
+    <header className="fixed top-0 left-0 w-full z-50 transition-all duration-300">
+      {/* Tier 1: Top Utility Bar (40px) */}
+      <div className={`w-full bg-secondary h-10 flex items-center justify-between px-6 md:px-12 border-b border-white/5 transition-all duration-300 ${
+        isScrolled ? "-mt-10 opacity-0 pointer-events-none" : "mt-0 opacity-100"
+      }`}>
+        <div className="hidden sm:flex items-center gap-2 text-[11px] font-bold tracking-widest text-accent uppercase">
+          <span className="size-1.5 rounded-full bg-accent animate-pulse" />
+          CURATED 4K & DYNAMIC DISPLAY PLATFORM
         </div>
-      </Container>
+        <div className="flex items-center gap-6 text-[11px] font-bold tracking-widest text-white/80 uppercase ml-auto">
+          <Link href="/blog" className="hover:text-accent transition-colors">
+            Blog & Guides
+          </Link>
+          <Link href="/wallpapers" className="hover:text-accent transition-colors">
+            Collections
+          </Link>
+          <div className="h-3 w-px bg-white/20" />
+          <Link href="/wallpapers?device=desktop" className="hover:text-accent transition-colors">
+            Desktop & Mobile
+          </Link>
+        </div>
+      </div>
 
-      {open && (
-        <Container className="border-t border-border py-4 lg:hidden">
-          <form onSubmit={search} className="mb-3">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Search wallpapers…"
-              className="h-10 w-full rounded-lg border border-border bg-surface px-3 text-sm outline-none focus:border-accent/60"
-            />
-          </form>
-          <div className="grid grid-cols-2 gap-1">
-            <Link href="/wallpapers" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm text-muted hover:text-foreground">
-              All
+      {/* Tier 2: Main Navigation Bar (72px) */}
+      <div className="w-full bg-background/95 backdrop-blur-md border-b border-white/10">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 h-[72px] flex items-center justify-between gap-6">
+          {/* Sovereign Brand Logo */}
+          <Link href="/" className="flex items-center cursor-pointer group shrink-0">
+            <BrandLogo size="md" subtext="4K STUDIO" />
+          </Link>
+
+          {/* Desktop Nav Links */}
+          <nav className="hidden lg:flex items-center gap-8">
+            <Link
+              href="/wallpapers"
+              className="text-[13px] font-bold tracking-widest text-white hover:text-accent transition-colors"
+            >
+              WALLPAPERS
             </Link>
-            <Link href="/wallpapers?kind=live" onClick={() => setOpen(false)} className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-muted hover:text-foreground">
-              <span className="size-1.5 rounded-full bg-accent" aria-hidden /> Live
+            <Link
+              href="/wallpapers?kind=live"
+              className="text-[13px] font-bold tracking-widest text-white hover:text-accent transition-colors flex items-center gap-1.5"
+            >
+              <span className="size-1.5 rounded-full bg-accent" />
+              LIVE 4K
             </Link>
-            <Link href="/blog" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm text-muted hover:text-foreground">
-              Blog
+            <Link
+              href="/wallpapers"
+              className="text-[13px] font-bold tracking-widest text-white hover:text-accent transition-colors"
+            >
+              COLLECTIONS
             </Link>
-            {CATEGORIES.map((c) => (
-              <Link
-                key={c.slug}
-                href={`/wallpapers/${c.slug}`}
-                onClick={() => setOpen(false)}
-                className="rounded-lg px-3 py-2 text-sm text-muted hover:text-foreground"
-              >
-                {c.name}
-              </Link>
-            ))}
-            <Link href={displayName ? "/account" : "/login"} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm text-muted hover:text-foreground">
-              {displayName ? "Account" : "Sign in"}
+            <Link
+              href="/blog"
+              className="text-[13px] font-bold tracking-widest text-white hover:text-accent transition-colors"
+            >
+              BLOG
             </Link>
+          </nav>
+
+          {/* Search Bar Form / Expanded */}
+          <div className="hidden md:flex items-center flex-1 max-w-xs mx-4">
+            <form onSubmit={handleSearch} className="relative w-full">
+              <Search className="w-4 h-4 text-white/50 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="SEARCH 4K WALLPAPERS…"
+                className="w-full bg-secondary/70 border border-white/10 text-white placeholder:text-white/40 text-xs font-semibold tracking-wider pl-9 pr-3 py-2 outline-none focus:border-primary transition-all"
+              />
+            </form>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-5 shrink-0">
+            {/* Search toggle on mobile */}
+            <button
+              type="button"
+              onClick={() => setSearchOpen(!searchOpen)}
+              className="md:hidden text-white hover:text-accent transition-colors p-1"
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+
+            {/* Cart Icon */}
+            <Link
+              href="/cart"
+              aria-label="Cart"
+              className="relative text-white hover:text-accent transition-colors p-1"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {mounted && cart.hydrated && cart.count > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 grid min-w-4 h-4 place-items-center bg-accent px-1 text-[10px] font-black text-secondary">
+                  {cart.count}
+                </span>
+              )}
+            </Link>
+
+            {/* Admin link if applicable */}
             {isAdmin && (
-              <Link href="/admin-dash" onClick={() => setOpen(false)} className="rounded-lg px-3 py-2 text-sm text-muted hover:text-foreground">
-                Admin
+              <Link
+                href="/admin-dash"
+                aria-label="Admin Dashboard"
+                className="hidden sm:flex text-white/80 hover:text-accent transition-colors p-1"
+              >
+                <Shield className="w-5 h-5" />
               </Link>
             )}
+
+            {/* User Account / LOG IN Button */}
+            <Link
+              href={displayName ? "/account" : "/login"}
+              className="hidden sm:flex items-center gap-2 px-5 py-2 border border-primary text-primary text-[12px] font-bold tracking-widest hover:bg-primary hover:text-white transition-all duration-300"
+            >
+              <User className="w-4 h-4" />
+              {displayName ? displayName.toUpperCase().split(" ")[0] : "LOG IN"}
+            </Link>
+
+            {/* Mobile Menu Toggle */}
+            <button
+              type="button"
+              className="lg:hidden text-white p-1"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+            >
+              {mobileMenuOpen ? <CloseIcon className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
           </div>
-        </Container>
-      )}
+        </div>
+
+        {/* Mobile Search Overlay */}
+        {searchOpen && (
+          <div className="md:hidden px-6 py-3 bg-secondary border-t border-white/10">
+            <form onSubmit={handleSearch} className="relative">
+              <Search className="w-4 h-4 text-white/50 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="SEARCH 4K WALLPAPERS…"
+                autoFocus
+                className="w-full bg-background border border-white/10 text-white placeholder:text-white/40 text-xs font-semibold tracking-wider pl-9 pr-3 py-2 outline-none focus:border-primary"
+              />
+            </form>
+          </div>
+        )}
+
+        {/* Mobile Menu Drawer */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden bg-secondary border-t border-white/10 overflow-hidden"
+            >
+              <div className="px-6 py-8 flex flex-col gap-5">
+                <Link
+                  href="/wallpapers"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-base font-bold tracking-widest text-white hover:text-accent transition-colors"
+                >
+                  WALLPAPERS
+                </Link>
+                <Link
+                  href="/wallpapers?kind=live"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-base font-bold tracking-widest text-white hover:text-accent transition-colors flex items-center gap-2"
+                >
+                  <span className="size-1.5 rounded-full bg-accent" />
+                  LIVE 4K
+                </Link>
+                <Link
+                  href="/wallpapers"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-base font-bold tracking-widest text-white hover:text-accent transition-colors"
+                >
+                  COLLECTIONS
+                </Link>
+                <Link
+                  href="/blog"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-base font-bold tracking-widest text-white hover:text-accent transition-colors"
+                >
+                  BLOG
+                </Link>
+
+                <div className="h-px bg-white/10 w-full my-2" />
+
+                <div className="grid grid-cols-2 gap-2 text-xs font-semibold text-white/70">
+                  {CATEGORIES.slice(0, 6).map((c) => (
+                    <Link
+                      key={c.slug}
+                      href={`/wallpapers/${c.slug}`}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="py-1 hover:text-accent"
+                    >
+                      {c.name.toUpperCase()}
+                    </Link>
+                  ))}
+                </div>
+
+                <div className="h-px bg-white/10 w-full my-2" />
+
+                <Link
+                  href={displayName ? "/account" : "/login"}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-3.5 bg-primary text-white text-center text-xs font-bold tracking-widest hover:bg-primary/90 transition-colors uppercase"
+                >
+                  {displayName ? `MY ACCOUNT (${displayName.split(" ")[0]})` : "LOG IN"}
+                </Link>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </header>
   );
 }

@@ -1,9 +1,11 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Container, SectionHeading } from "@/components/ui";
 import { Filters } from "@/components/filters";
 import { MasonryGrid, MasonrySkeleton } from "@/components/masonry-grid";
 import { listWallpapers, countWallpapers, listCategories } from "@/lib/catalog";
+import { cn } from "@/lib/utils";
 import type { DeviceType, WallpaperQuery } from "@/lib/types";
 
 type SP = Promise<{ [k: string]: string | string[] | undefined }>;
@@ -17,12 +19,44 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const sp = await searchParams;
   const search = typeof sp.search === "string" ? sp.search : undefined;
-  const title = search ? `Search: ${search}` : "Browse Wallpapers";
+  const kind = typeof sp.kind === "string" ? sp.kind : undefined;
+
+  let title = "Browse 4K, OLED & Live Wallpapers · Desktop & Mobile | Aurava";
+  let description =
+    "Explore 4K UHD, OLED dark, and live motion wallpapers for PC, Mac, iPhone & Android. Hand-picked collections, pristine quality & zero watermarks ✓";
+
+  if (search) {
+    title = `“${search}” 4K Wallpapers & Live Backgrounds | Aurava`;
+    description = `Download pristine 4K wallpapers matching “${search}”. Hand-curated for desktop, tablet, and mobile with zero watermarks ✓`;
+  } else if (kind === "live") {
+    title = "4K Live Motion Wallpapers · 60FPS Video Loops | Aurava";
+    description =
+      "Explore curated 4K live video wallpapers. Lightweight H.264 MP4 loops for Windows 11 & Mac with <1% CPU load. Free and premium instant downloads ✓";
+  }
+
   return {
     title,
-    description:
-      "Browse premium 4K & HD wallpapers for desktop, phone and tablet. Filter by category, device and more.",
+    description,
+    keywords: [
+      "4k wallpapers",
+      "live wallpapers",
+      "oled backgrounds",
+      "best wallpaper sites",
+      "wallpaper engine alternatives",
+      "desktop wallpapers 4k",
+      "phone wallpapers hd",
+    ],
     alternates: { canonical: "/wallpapers" },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
   };
 }
 
@@ -99,6 +133,39 @@ async function WallpapersContent({
             : `${total} wallpaper${total === 1 ? "" : "s"} available`
         }
       />
+
+      {/* Crawlable Category Navigation Pills for Direct SEO Equity Flow */}
+      <nav aria-label="Wallpaper categories" className="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
+        <Link
+          href="/wallpapers"
+          className={cn(
+            "rounded-full px-3 py-1 text-xs font-semibold tracking-wider transition-colors",
+            !query.category
+              ? "bg-accent text-accent-foreground"
+              : "border border-border/80 bg-surface text-muted hover:border-accent/40 hover:text-foreground"
+          )}
+        >
+          All
+        </Link>
+        {categories.map((cat) => {
+          const isActive = query.category === cat.slug;
+          return (
+            <Link
+              key={cat.slug}
+              href={`/wallpapers/${cat.slug}`}
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-semibold tracking-wider transition-colors",
+                isActive
+                  ? "bg-accent text-accent-foreground"
+                  : "border border-border/80 bg-surface text-muted hover:border-accent/40 hover:text-foreground"
+              )}
+            >
+              {cat.name}
+            </Link>
+          );
+        })}
+      </nav>
+
       <div className="mb-6">
         <Filters categories={categories} />
       </div>

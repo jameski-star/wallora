@@ -28,7 +28,8 @@ export function Filters({
     const next = new URLSearchParams(params.toString());
     if (value === null || value === "") next.delete(key);
     else next.set(key, value);
-    router.push(`${pathname}?${next.toString()}`);
+    const qs = next.toString();
+    router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }
 
   const device = params.get("device") ?? "";

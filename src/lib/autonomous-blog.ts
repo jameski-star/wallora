@@ -32,15 +32,16 @@ export async function runAutonomousBlogEngine(): Promise<{ ok: boolean; message:
   let selectedTopic = "";
   try {
     const topicPrompt = [
-      "You are the Editorial Director for Aurava, a premium wallpaper marketplace and personalization platform.",
+      "You are the Editorial Director and Search Strategist for Aurava, a curated 4K/OLED/Live wallpaper marketplace.",
       "Identify a fresh, high-demand search topic regarding display technology, wallpaper personalization, color science, gaming/minimal setups, or live backgrounds.",
+      "Target real, high-intent search queries asked on Google and Reddit (e.g. running 4K live video backgrounds without CPU lag on Windows/Mac, true OLED #000000 battery savings, ultrawide 21:9 multi-monitor scaling, safe uncompressed downloads, or creator commercial licensing).",
       "We want to capture search queries that will drive organic downloads of desktop, phone, or tablet wallpapers.",
       "",
       "Existing Blog Article Slugs (Do NOT duplicate or write about these):",
       ...existingSlugs.map((s) => `- ${s}`),
       "",
       "Instructions:",
-      "1. Propose 3 fresh, unique article topics.",
+      "1. Propose 3 fresh, unique article topics tailored to user search intent.",
       "2. Select the single best topic from those 3 options.",
       "3. Return ONLY a JSON object containing the selected topic.",
       'Format: { "topic": "Proposed blog post topic title" }',
@@ -90,10 +91,12 @@ export async function runAutonomousBlogEngine(): Promise<{ ok: boolean; message:
     console.error("Autonomous topic selection failed, using fallback:", err);
     // Fallback topic if Gemini selection fails
     const fallbackTopics = [
-      "The Ultimate Guide to OLED Wallpapers and Battery Saving Tips",
-      "How Resolution and PPI Affect Your Wallpaper Quality on High-DPI Displays",
-      "Minimalist Workspace Aesthetics: Curation Guide for Developers and Creators",
-      "Understanding Color Science in Digital Art and Screen Calibration",
+      "How to Set 4K Live Wallpapers on Windows 11 and Mac Without Lag",
+      "The Science of OLED Wallpapers: How True Pitch Black Saves Battery Life",
+      "Ultrawide and Multi-Monitor Wallpaper Setup Guide: 21:9 and 32:9 Formats",
+      "Safe 4K Wallpaper Downloads: How to Avoid Adware and Get True Uncompressed Files",
+      "Wallpaper Licensing for Content Creators: YouTube, Twitch, and Commercial Rights",
+      "Minimalist Workspace Aesthetics: Clean Curation Guide for High-DPI Displays",
     ];
     // Find one that isn't duplicated
     selectedTopic = fallbackTopics.find(t => {

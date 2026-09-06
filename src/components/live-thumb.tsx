@@ -12,9 +12,6 @@ import { cn } from "@/lib/utils";
  *
  * The clip + poster sit inside `.protected-img`, so neither can be dragged or
  * saved while the parent <Link> stays clickable.
- *
- * The video `src` is deferred: it starts empty and is only set once the element
- * enters the viewport, so below-the-fold live wallpapers don't block LCP.
  */
 export function LiveThumb({
   videoSrc,
@@ -29,6 +26,8 @@ export function LiveThumb({
   always = false,
   /** Fit the whole clip within the viewport (object-contain, height-capped). */
   contain = false,
+  /** Controlled active/hover state from parent card if provided */
+  active: activeProp,
 }: {
   videoSrc: string;
   poster: string;
@@ -40,42 +39,76 @@ export function LiveThumb({
   sizes?: string;
   always?: boolean;
   contain?: boolean;
+  active?: boolean;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const reduce = useReducedMotion();
-  // Use a low threshold so the video src is populated well before the element
-  // is fully visible, giving the browser time to begin the fetch.
-  const inView = useInView(ref, { amount: 0.1 });
-  const [active, setActive] = useState(false);
-  // Defer the video src until the element scrolls into view so below-the-fold
-  // live wallpapers don't compete with the LCP hero image on mobile.
-  const [srcLoaded, setSrcLoaded] = useState(false);
-  useEffect(() => {
-    if (inView && !srcLoaded) setSrcLoaded(true);
-  }, [inView, srcLoaded]);
+  const inView = useInView(ref, { amount: 0.05 });
+  const [hovered, setHovered] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  // Drive playback. On hover-capable devices the clip follows `active`
-  // (hover/always); on touch devices it follows viewport visibility so the
-  // loop plays without a hover affordance.
+  // If always or priority, load video source immediately without waiting for scroll.
+  const [srcLoaded, setSrcLoaded] = useState(() => Boolean(always || priority));
+
+  const isCardActive = activeProp !== undefined ? activeProp : hovered;
+
+  useEffect(() => {
+    if ((inView || isCardActive || always || priority) && !srcLoaded) {
+      setSrcLoaded(true);
+    }
+  }, [inView, isCardActive, always, priority, srcLoaded]);
+
+  // Determine if the video should be actively playing
+  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches;
+  const shouldPlay = !reduce && (always || (canHover ? isCardActive : inView));
+
+  // Drive playback robustly across all browsers & devices
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    const canHover = window.matchMedia("(hover: hover)").matches;
-    const shouldPlay = !reduce && (always || (canHover ? active : inView));
+
+    // Mobile & strict autoplay policies require muted property on DOM node
+    v.defaultMuted = true;
+    v.muted = true;
+
+    if (!srcLoaded) return;
+
     if (shouldPlay) {
-      v.play().catch(() => {});
+      const playPromise = v.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+          })
+          .catch(() => {
+            // If browser blocked or media was still buffering, retry on canplay
+            const handleCanPlay = () => {
+              v.play()
+                .then(() => setIsPlaying(true))
+                .catch(() => {});
+            };
+            v.addEventListener("canplay", handleCanPlay, { once: true });
+          });
+      }
     } else {
       v.pause();
-      if (!always) v.currentTime = 0;
+      setIsPlaying(false);
+      if (!always) {
+        try {
+          v.currentTime = 0;
+        } catch {
+          /* ignore */
+        }
+      }
     }
-  }, [active, inView, reduce, always]);
+  }, [shouldPlay, srcLoaded, always, videoSrc]);
 
   return (
     <div
       ref={ref}
-      onPointerEnter={() => setActive(true)}
-      onPointerLeave={() => setActive(false)}
+      onPointerEnter={() => setHovered(true)}
+      onPointerLeave={() => setHovered(false)}
       className={cn(
         "protected-img relative overflow-hidden",
         contain && "flex items-center justify-center",
@@ -83,8 +116,7 @@ export function LiveThumb({
       )}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Poster — the resting frame; also the SSR/no-JS fallback.
-           unoptimized: Cloudinary already delivers optimized URLs. */}
+      {/* Poster Image — resting frame and fallback until video frames actually render */}
       <Image
         src={poster}
         alt={alt}
@@ -96,13 +128,16 @@ export function LiveThumb({
         fetchPriority={priority ? "high" : undefined}
         loading={priority ? "eager" : "lazy"}
         className={cn(
-          "transition-opacity duration-500",
+          "transition-opacity duration-300 pointer-events-none",
           contain
             ? "h-auto max-h-[80svh] w-auto max-w-full object-contain"
-            : "h-auto w-full object-cover",
-          active || (always && !reduce) ? "opacity-0" : "opacity-100",
+            : "h-full w-full object-cover",
+          // Keep poster visible until video is actually playing, avoiding any black flash
+          isPlaying ? "opacity-0" : "opacity-100",
         )}
       />
+
+      {/* Video Loop Element */}
       <video
         ref={videoRef}
         src={srcLoaded ? videoSrc : undefined}
@@ -110,11 +145,14 @@ export function LiveThumb({
         muted
         loop
         playsInline
-        preload="metadata"
+        autoPlay={shouldPlay}
+        preload={always || priority ? "auto" : "metadata"}
+        onPlaying={() => setIsPlaying(true)}
         aria-hidden
         className={cn(
-          "absolute inset-0 h-full w-full",
+          "absolute inset-0 h-full w-full pointer-events-none transition-opacity duration-300",
           contain ? "object-contain" : "object-cover",
+          isPlaying ? "opacity-100" : "opacity-0",
         )}
       />
     </div>

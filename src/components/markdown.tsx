@@ -143,6 +143,64 @@ function renderBlocks(source: string): React.ReactNode[] {
       continue;
     }
 
+    // Markdown Table: lines beginning and ending with |
+    if (/^\s*\|.*\|\s*$/.test(line)) {
+      const tableLines: string[] = [];
+      while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+      if (tableLines.length >= 2) {
+        const parseCells = (row: string) =>
+          row
+            .replace(/^\|/, "")
+            .replace(/\|$/, "")
+            .split("|")
+            .map((c) => c.trim());
+
+        const headers = parseCells(tableLines[0]);
+        const hasSep = /^\|?[\s-:|]+\|?$/.test(tableLines[1]);
+        const bodyRows = hasSep ? tableLines.slice(2) : tableLines.slice(1);
+
+        out.push(
+          <div
+            key={key++}
+            className="my-6 overflow-x-auto rounded-card border border-border bg-surface"
+          >
+            <table className="w-full text-left text-sm">
+              <thead className="border-b border-border bg-surface-2/70 text-xs font-semibold uppercase tracking-wider text-foreground">
+                <tr>
+                  {headers.map((h, hIdx) => (
+                    <th key={hIdx} className="px-4 py-3 font-semibold">
+                      {renderInline(h)}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60 text-muted">
+                {bodyRows.map((r, rIdx) => {
+                  const cells = parseCells(r);
+                  return (
+                    <tr
+                      key={rIdx}
+                      className="transition-colors hover:bg-surface-2/30"
+                    >
+                      {cells.map((c, cIdx) => (
+                        <td key={cIdx} className="px-4 py-3 font-normal text-foreground/90">
+                          {renderInline(c)}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>,
+        );
+        continue;
+      }
+    }
+
     // Paragraph: consume consecutive non-blank lines that aren't another block.
     const para: string[] = [];
     while (i < lines.length && lines[i].trim() !== "" && !startsBlock(lines[i])) {
@@ -165,6 +223,7 @@ function startsBlock(line: string): boolean {
     /^\s*>\s?/.test(line) ||
     /^\s*[-*+]\s+/.test(line) ||
     /^\s*\d+[.)]\s+/.test(line) ||
+    /^\s*\|.*\|\s*$/.test(line) ||
     /^\s*([-*_])(\s*\1){2,}\s*$/.test(line)
   );
 }

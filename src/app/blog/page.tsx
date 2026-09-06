@@ -7,10 +7,22 @@ import { listPosts } from "@/lib/blog";
 import { postImageUrl } from "@/lib/cloudinary";
 
 export const metadata: Metadata = {
-  title: "Blog",
+  title: "Display Insights, 4K Setup Guides & Calibration | Aurava",
   description:
-    "Guides, tips and announcements from Aurava — how to find, customise and get the most from your wallpapers.",
+    "Expert setup guides for 4K monitors, OLED battery saving, multi-display spanning, and lightweight live wallpaper configuration on Windows & Mac ✓",
   alternates: { canonical: "/blog" },
+  openGraph: {
+    type: "website",
+    title: "Display Insights, 4K Setup Guides & Calibration | Aurava",
+    description:
+      "Expert setup guides for 4K monitors, OLED battery saving, multi-display spanning, and lightweight live wallpaper configuration on Windows & Mac ✓",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Display Insights, 4K Setup Guides & Calibration | Aurava",
+    description:
+      "Expert setup guides for 4K monitors, OLED battery saving, multi-display spanning, and lightweight live wallpaper configuration on Windows & Mac ✓",
+  },
 };
 
 function formatDate(iso: string): string {

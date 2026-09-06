@@ -45,6 +45,10 @@ export function CheckoutClient({ defaultEmail }: { defaultEmail: string }) {
     }
   }
 
+  if (!cart.hydrated) {
+    return <div className="skeleton h-64 w-full rounded-card" />;
+  }
+
   if (cart.count === 0) {
     return (
       <div className="rounded-card border border-dashed border-border bg-surface/50 py-16 text-center">

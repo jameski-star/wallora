@@ -26,6 +26,7 @@ interface CartContextValue {
   has: (wallpaperId: string) => boolean;
   count: number;
   totalCents: number;
+  hydrated: boolean;
 }
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -70,8 +71,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       has: (id) => lines.some((l) => l.wallpaperId === id),
       count: lines.length,
       totalCents: lines.reduce((sum, l) => sum + l.priceCents, 0),
+      hydrated,
     };
-  }, [lines]);
+  }, [lines, hydrated]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

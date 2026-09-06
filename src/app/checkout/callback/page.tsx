@@ -77,6 +77,8 @@ export default async function CallbackPage({
                           device={w.device}
                           src={previewUrl(w, { width: 400 })}
                           alt={it.title}
+                          width={w.width}
+                          height={w.height}
                         />
                       </div>
                     )}

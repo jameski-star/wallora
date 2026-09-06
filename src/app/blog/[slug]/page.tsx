@@ -8,7 +8,7 @@ import { JsonLd } from "@/components/json-ld";
 import { Markdown } from "@/components/markdown";
 import { getPost } from "@/lib/blog";
 import { postImageUrl } from "@/lib/cloudinary";
-import { abs } from "@/lib/seo";
+import { abs, extractFaqsFromMarkdown, faqPageJsonLd } from "@/lib/seo";
 
 type Params = Promise<{ slug: string }>;
 
@@ -71,9 +71,13 @@ export default async function BlogPostPage({ params }: { params: Params }) {
     ...(cover ? { image: cover } : {}),
   };
 
+  const faqs = extractFaqsFromMarkdown(post.body);
+  const faqJsonLdData = faqs.length > 0 ? faqPageJsonLd(faqs) : null;
+
   return (
     <Container className="py-8 sm:py-12">
       <JsonLd data={jsonLd} />
+      {faqJsonLdData && <JsonLd data={faqJsonLdData} />}
       <article className="mx-auto max-w-3xl">
         <Link
           href="/blog"
