@@ -10,6 +10,7 @@ import { CurrencyProvider } from "@/components/currency";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import { JsonLd } from "@/components/json-ld";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({ 
   subsets: ["latin"],
@@ -76,6 +77,7 @@ export default function RootLayout({
             <DynamicLayout>{children}</DynamicLayout>
           </Suspense>
         </CartProvider>
+        <Analytics />
       </body>
     </html>
   );
