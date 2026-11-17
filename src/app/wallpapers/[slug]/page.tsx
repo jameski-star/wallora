@@ -9,11 +9,14 @@ import { LiveThumb } from "@/components/live-thumb";
 import { BuyPanel } from "@/components/buy-panel";
 import { MockupViewer, MockupTrigger } from "@/components/mockup-viewer";
 import { MasonryGrid, MasonrySkeleton } from "@/components/masonry-grid";
+import { Pagination } from "@/components/pagination";
 import { Filters } from "@/components/filters";
 import { JsonLd } from "@/components/json-ld";
 import { getRepo } from "@/lib/repo";
 import { listWallpapers, countWallpapers, getViewableWallpaper } from "@/lib/catalog";
+import { WALLPAPERS_PAGE_SIZE } from "@/lib/constants";
 import { previewUrl, videoPreviewUrl } from "@/lib/cloudinary";
+import { toCardWallpaper } from "@/lib/card";
 import {
   wallpaperMetadata,
   wallpaperJsonLd,
@@ -36,10 +39,13 @@ export const unstable_instant = { prefetch: "static", unstable_disableValidation
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Params;
+  searchParams: SearchParams;
 }): Promise<Metadata> {
   const { slug } = await params;
+  const sp = await searchParams;
   const repo = await getRepo();
 
   const category = await repo.getCategory(slug);
@@ -56,11 +62,21 @@ export async function generateMetadata({
       "wallpaper engine alternatives",
       category.slug,
     ];
+    // Clamp the canonical to a page that exists so `?page=999` can't point at
+    // an empty URL.
+    const total = await countWallpapers({ category: slug });
+    const totalPages = Math.max(1, Math.ceil(total / WALLPAPERS_PAGE_SIZE));
+    const page = Math.min(
+      Math.max(1, parseInt(sp.page as string, 10) || 1),
+      totalPages,
+    );
     return {
       title,
       description,
       keywords: kw,
-      alternates: { canonical: `/wallpapers/${slug}` },
+      alternates: {
+        canonical: page > 1 ? `/wallpapers/${slug}?page=${page}` : `/wallpapers/${slug}`,
+      },
       openGraph: {
         type: "website",
         title,
@@ -132,12 +148,14 @@ async function SlugContent({
       premium:
         sp.premium === "true" ? true : sp.premium === "false" ? false : undefined,
       sort: (str(sp.sort) as WallpaperQuery["sort"]) ?? "newest",
-      limit: 60,
+      limit: WALLPAPERS_PAGE_SIZE,
     };
 
-    const [wallpapers, total] = await Promise.all([
-      listWallpapers(query),
-      countWallpapers(query),
+    const [total] = await Promise.all([countWallpapers(query)]);
+    const totalPages = Math.max(1, Math.ceil(total / WALLPAPERS_PAGE_SIZE));
+    const page = Math.min(Math.max(1, parseInt(sp.page as string, 10) || 1), totalPages);
+    const [wallpapers] = await Promise.all([
+      listWallpapers({ ...query, offset: (page - 1) * WALLPAPERS_PAGE_SIZE }),
     ]);
     const meta = CATEGORIES.find((c) => c.slug === slug);
     return (
@@ -174,7 +192,20 @@ async function SlugContent({
         <div className="mb-6">
           <Filters lockedCategory={slug} />
         </div>
-        <MasonryGrid wallpapers={wallpapers} />
+        <MasonryGrid cards={wallpapers.map(toCardWallpaper)} />
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          makeHref={(p) => {
+            const next = new URLSearchParams();
+            for (const [k, v] of Object.entries(sp)) {
+              if (typeof v === "string" && v && k !== "page") next.set(k, v);
+            }
+            if (p > 1) next.set("page", String(p));
+            const qs = next.toString();
+            return qs ? `/wallpapers/${slug}?${qs}` : `/wallpapers/${slug}`;
+          }}
+        />
       </Container>
     );
   }
@@ -347,7 +378,7 @@ async function SlugContent({
       {related.length > 0 && (
         <section className="mt-16">
           <SectionHeading title="More like this" />
-          <MasonryGrid wallpapers={related} />
+          <MasonryGrid cards={related.map(toCardWallpaper)} />
         </section>
       )}
     </Container>

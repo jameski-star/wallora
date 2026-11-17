@@ -201,19 +201,25 @@ export default async function AccountPage() {
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-white/10 flex flex-col gap-2">
-                        <a
-                          href={`/api/download/order/${it.orderId}?wp=${it.wallpaperId}`}
-                          className="w-full h-12 bg-primary text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-98 transition-all shadow-md"
-                        >
-                          <Download size={15} /> DOWNLOAD FULL RESOLUTION
-                        </a>
-                        {it.wallpaper && (
-                          <Link
-                            href={`/wallpapers/${it.wallpaper.slug}`}
-                            className="w-full py-2 text-center text-[10px] font-bold tracking-widest text-white/50 hover:text-accent uppercase transition-colors"
-                          >
-                            VIEW WALLPAPER DETAILS →
-                          </Link>
+                        {it.wallpaper ? (
+                          <>
+                            <a
+                              href={`/api/download/order/${it.orderId}?wp=${it.wallpaperId}`}
+                              className="w-full h-12 bg-primary text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-primary/90 active:scale-98 transition-all shadow-md"
+                            >
+                              <Download size={15} /> DOWNLOAD FULL RESOLUTION
+                            </a>
+                            <Link
+                              href={`/wallpapers/${it.wallpaper.slug}`}
+                              className="w-full py-2 text-center text-[10px] font-bold tracking-widest text-white/50 hover:text-accent uppercase transition-colors"
+                            >
+                              VIEW WALLPAPER DETAILS →
+                            </Link>
+                          </>
+                        ) : (
+                          <p className="w-full py-2 text-center text-[10px] font-bold tracking-widest text-amber-300/90 uppercase">
+                            Temporarily unavailable — contact support
+                          </p>
                         )}
                       </div>
                     </div>

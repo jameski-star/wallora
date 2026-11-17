@@ -133,3 +133,6 @@ export const HOLIDAY_LABELS: Record<HolidayType, string> = {
 };
 
 export const ADMIN_ROUTE = "/admin-dash";
+
+/** Wallpapers shown per catalog page (/wallpapers and category listings). */
+export const WALLPAPERS_PAGE_SIZE = 60;

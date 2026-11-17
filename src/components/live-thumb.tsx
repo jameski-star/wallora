@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useInView, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
@@ -59,8 +59,20 @@ export function LiveThumb({
     }
   }, [inView, isCardActive, always, priority, srcLoaded]);
 
-  // Determine if the video should be actively playing
-  const canHover = typeof window !== "undefined" && window.matchMedia("(hover: hover)").matches;
+  // Whether the device has a real hover-capable pointer. Read via
+  // useSyncExternalStore with a `false` server snapshot, so the server and the
+  // first client render agree (a render-time `matchMedia` branch hydrates into
+  // a mismatched `autoPlay`).
+  const canHover = useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia("(hover: hover)");
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia("(hover: hover)").matches,
+    () => false,
+  );
+
   const shouldPlay = !reduce && (always || (canHover ? isCardActive : inView));
 
   // Drive playback robustly across all browsers & devices
@@ -116,32 +128,37 @@ export function LiveThumb({
       )}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Poster Image — resting frame and fallback until video frames actually render */}
-      <Image
-        src={poster}
-        alt={alt}
-        width={width}
-        height={height}
-        sizes={sizes ?? "(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw"}
-        unoptimized
-        draggable={false}
-        fetchPriority={priority ? "high" : undefined}
-        loading={priority ? "eager" : "lazy"}
-        className={cn(
-          "transition-opacity duration-300 pointer-events-none",
-          contain
-            ? "h-auto max-h-[80svh] w-auto max-w-full object-contain"
-            : "h-full w-full object-cover",
-          // Keep poster visible until video is actually playing, avoiding any black flash
-          isPlaying ? "opacity-0" : "opacity-100",
-        )}
-      />
+      {/* Poster Image — resting frame and fallback until video frames actually render.
+          Omitted entirely when there's no poster (a live wallpaper with no still
+          and no derivable poster frame): an empty `src` makes the browser
+          re-download the current page. */}
+      {poster ? (
+        <Image
+          src={poster}
+          alt={alt}
+          width={width}
+          height={height}
+          sizes={sizes ?? "(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw"}
+          unoptimized
+          draggable={false}
+          fetchPriority={priority ? "high" : undefined}
+          loading={priority ? "eager" : "lazy"}
+          className={cn(
+            "transition-opacity duration-300 pointer-events-none",
+            contain
+              ? "h-auto max-h-[80svh] w-auto max-w-full object-contain"
+              : "h-full w-full object-cover",
+            // Keep poster visible until video is actually playing, avoiding any black flash
+            isPlaying ? "opacity-0" : "opacity-100",
+          )}
+        />
+      ) : null}
 
       {/* Video Loop Element */}
       <video
         ref={videoRef}
-        src={srcLoaded ? videoSrc : undefined}
-        poster={poster}
+        src={srcLoaded && videoSrc ? videoSrc : undefined}
+        poster={poster || undefined}
         muted
         loop
         playsInline

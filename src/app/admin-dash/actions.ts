@@ -210,6 +210,15 @@ export async function deleteWallpaper(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (id) {
     const repo = await getRepo();
+    // Refuse to delete a wallpaper that appears in any order — removing the
+    // catalog row orphans the buyers' download links (they 404 forever) since
+    // the original file is dropped with the row.
+    if (await repo.hasOrdersForWallpaper(id)) {
+      throw new Error(
+        "This wallpaper has orders attached. Downloads for those buyers would " +
+          "stop working. Hide it from the catalog (or contact the buyers) instead.",
+      );
+    }
     await repo.deleteWallpaper(id);
     revalidatePath("/admin-dash/wallpapers");
     revalidatePath("/wallpapers");

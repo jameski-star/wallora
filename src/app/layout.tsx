@@ -6,6 +6,7 @@ import "./globals.css";
 import { baseMetadata, websiteJsonLd, organizationJsonLd } from "@/lib/seo";
 import { getViewer } from "@/lib/auth";
 import { CartProvider } from "@/components/cart";
+import { FavoritesProvider } from "@/components/favorites";
 import { CurrencyProvider } from "@/components/currency";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -72,9 +73,11 @@ export default function RootLayout({
         <JsonLd data={websiteJsonLd()} />
         <JsonLd data={organizationJsonLd()} />
         <CartProvider>
-          <Suspense fallback={<LayoutFallback />}>
-            <DynamicLayout>{children}</DynamicLayout>
-          </Suspense>
+          <FavoritesProvider>
+            <Suspense fallback={<LayoutFallback />}>
+              <DynamicLayout>{children}</DynamicLayout>
+            </Suspense>
+          </FavoritesProvider>
         </CartProvider>
       </body>
     </html>

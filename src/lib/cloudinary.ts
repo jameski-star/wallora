@@ -233,7 +233,7 @@ export function postImageUrl(
 export function ogImageUrl(
   wallpaper: Pick<
     Wallpaper,
-    "previewPublicId" | "originalPublicId" | "videoPublicId" | "kind" | "isPremium"
+    "kind" | "previewPublicId" | "originalPublicId" | "videoPublicId" | "isPremium"
   >,
 ): string {
   return previewUrl(wallpaper, { width: 1200, quality: 70 });
@@ -245,22 +245,35 @@ export function ogImageUrl(
  * navigating to it. Premium originals are NOT served this way — they come from
  * the private Supabase bucket via a signed URL after purchase (lib/delivery.ts).
  *
+ * Live wallpapers have no still original — their downloadable original is the
+ * looping video, so fall back to the video public id when the image one is
+ * absent. Returns "" when the asset is missing entirely (caller 502s).
+ *
  * `fl_attachment` is itself a transformation, so this URL is signed too — under
  * "Strict transformations" an unsigned variant would 401.
  *
  * Without Cloudinary configured, falls back to the absolute seed URL.
  */
 export function originalDownloadUrl(
-  wallpaper: Pick<Wallpaper, "originalPublicId" | "slug">,
+  wallpaper: Pick<
+    Wallpaper,
+    "kind" | "originalPublicId" | "videoPublicId" | "slug"
+  >,
 ): string {
-  const publicId = wallpaper.originalPublicId;
+  const isVideo = !wallpaper.originalPublicId && wallpaper.kind === "live";
+  const publicId =
+    wallpaper.originalPublicId ||
+    (isVideo ? wallpaper.videoPublicId : undefined) ||
+    "";
+  if (!publicId) return "";
 
   if (!features.cloudinary) return publicId; // absolute seed URL (demo)
 
   const { id, delivery } = normalizeSource(publicId);
+  const resource: "image" | "video" = isVideo ? "video" : "image";
   const filename = `aurava-${wallpaper.slug}`;
   // fl_attachment:<name> sets Content-Disposition: attachment; filename=<name>.
   // No quality/format transform: free downloads get the true original asset.
   const transforms = [`fl_attachment:${encodeURIComponent(filename)}`];
-  return deliveryUrl("image", delivery, transforms, id);
+  return deliveryUrl(resource, delivery, transforms, id);
 }

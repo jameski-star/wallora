@@ -28,6 +28,8 @@ export function Filters({
     const next = new URLSearchParams(params.toString());
     if (value === null || value === "") next.delete(key);
     else next.set(key, value);
+    // Filter/sort changes restart the listing at page 1.
+    next.delete("page");
     const qs = next.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }

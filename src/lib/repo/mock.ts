@@ -186,6 +186,12 @@ export const mockRepo: Repository = {
     if (opts?.limit) items = items.slice(0, opts.limit);
     return items.map((o) => ({ ...o }));
   },
+  async hasOrdersForWallpaper(id) {
+    for (const o of store.orders.values()) {
+      if (o.items.some((it) => it.wallpaperId === id)) return true;
+    }
+    return false;
+  },
 
   async listPosts(opts) {
     let items = [...store.posts.values()];

@@ -50,6 +50,9 @@ export interface Repository {
   getOrderByMerchantRef(ref: string): Promise<Order | null>;
   updateOrder(id: string, patch: Partial<Order>): Promise<Order | null>;
   listOrders(opts?: { userId?: string; limit?: number }): Promise<Order[]>;
+  /** True when ANY order (paid, pending or failed) references the wallpaper.
+   *  Used to block admin deletions that would break buyers' downloads. */
+  hasOrdersForWallpaper(id: string): Promise<boolean>;
 
   // Blog
   listPosts(opts?: { includeUnpublished?: boolean; limit?: number }): Promise<Post[]>;

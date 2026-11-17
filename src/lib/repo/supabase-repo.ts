@@ -401,6 +401,18 @@ export const supabaseRepo: Repository = {
     const { data } = await query;
     return ((data as Record<string, unknown>[]) ?? []).map(toOrder);
   },
+  async hasOrdersForWallpaper(id) {
+    // Order items is a JSONB array of { wallpaperId, ... } — containment match.
+    // The needle must be JSON-encoded (supabase-js passes non-primitive values
+    // through verbatim, and Postgres rejects a JS object literal as invalid
+    // JSON input).
+    const { data, error } = await admin()
+      .from("orders")
+      .select("id")
+      .contains("items", JSON.stringify([{ wallpaperId: id }]));
+    if (error) return false; // fail open: never block deletion on a probe error
+    return (data?.length ?? 0) > 0;
+  },
 
   async listPosts(opts) {
     let query = (await db())

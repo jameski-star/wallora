@@ -1,13 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "motion/react";
-import { Check, Download, Lock, Plus } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import {
+  MoreHorizontal,
+  Maximize2,
+  Download,
+  Lock,
+  Plus,
+  Check,
+  Heart,
+  ExternalLink,
+  Share2,
+} from "lucide-react";
 import { ProtectedImage } from "./protected-image";
 import { LiveThumb } from "./live-thumb";
 import { useCart } from "./cart";
+import { useFavorites } from "./favorites";
 import { useFormatPrice } from "./currency";
-import { useState, useRef, useEffect } from "react";
+import { useGalleryPreview } from "./gallery-preview-modal";
 
 export interface CardWallpaper {
   id: string;
@@ -24,78 +35,106 @@ export interface CardWallpaper {
   placeholder?: string;
   kind?: "image" | "live";
   videoSrc?: string;
+  resolution?: string;
 }
 
 export function WallpaperCard({ w }: { w: CardWallpaper }) {
   const cart = useCart();
-  const inCart = cart.hydrated && cart.has(w.id);
-  const isLive = w.kind === "live" && !!w.videoSrc;
+  const favorites = useFavorites();
   const formatPrice = useFormatPrice();
+  const { openPreview } = useGalleryPreview();
+
+  const inCart = cart.hydrated && cart.has(w.id);
+  const isSaved = favorites.isSaved(w.id);
+  const isLive = w.kind === "live" && !!w.videoSrc;
 
   const [isHovered, setIsHovered] = useState(false);
-  const isTouchRef = useRef(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   const cardRef = useRef<HTMLElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const isTouchRef = useRef(false);
 
-  const handleMouseEnter = () => {
-    if (!isTouchRef.current) {
-      setIsHovered(true);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    if (!isTouchRef.current) {
-      setIsHovered(false);
-    }
-  };
-
-  const handleTouchStart = () => {
-    isTouchRef.current = true;
-  };
-
-  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (isTouchRef.current) {
-      if (!isHovered) {
-        e.preventDefault();
-        setIsHovered(true);
-      }
-    }
-  };
-
+  // Close 3-dot dropdown on click outside or Escape
   useEffect(() => {
-    if (!isHovered) return;
-    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
-      if (cardRef.current && !cardRef.current.contains(e.target as Node)) {
-        setIsHovered(false);
+    if (!menuOpen) return;
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleOutsideClick);
-    document.addEventListener("touchstart", handleOutsideClick);
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-      document.removeEventListener("touchstart", handleOutsideClick);
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
     };
-  }, [isHovered]);
+    document.addEventListener("mousedown", handleOutside);
+    document.addEventListener("touchstart", handleOutside);
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("mousedown", handleOutside);
+      document.removeEventListener("touchstart", handleOutside);
+      document.removeEventListener("keydown", handleKey);
+    };
+  }, [menuOpen]);
 
-  const aspectRatio = w.width && w.height 
-    ? `${w.width} / ${w.height}` 
-    : (w.device === "phone" ? "9 / 16" : "16 / 9");
+  const handleCopyLink = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const url = `${window.location.origin}/wallpapers/${w.slug}`;
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const aspectRatio =
+    w.width && w.height
+      ? `${w.width} / ${w.height}`
+      : w.device === "phone"
+        ? "9 / 16"
+        : w.device === "tablet"
+          ? "3 / 4"
+          : "16 / 9";
 
   return (
-    <motion.article
+    <article
       ref={cardRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onTouchStart={handleTouchStart}
-      className="group relative w-full overflow-hidden rounded-none border border-white/10 bg-black transition-all duration-300 hover:border-accent/80 hover:shadow-2xl cursor-pointer"
-      style={{ aspectRatio }}
+      onMouseEnter={() => {
+        if (!isTouchRef.current) setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        if (!isTouchRef.current) {
+          setIsHovered(false);
+          setMenuOpen(false);
+        }
+      }}
+      onTouchStart={() => {
+        isTouchRef.current = true;
+      }}
+      className={`group relative flex w-full flex-col rounded-[14px] border border-white/[0.08] bg-[#0c213d]/90 p-2 sm:p-2.5 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.35)] backdrop-blur-sm transition-all duration-300 hover:border-white/20 hover:bg-[#0e2544] hover:shadow-[0_12px_36px_-6px_rgba(0,0,0,0.6),0_0_0_1px_rgba(227,233,53,0.2)] ${
+        menuOpen ? "z-30" : "z-0"
+      }`}
     >
-      <Link 
-        href={`/wallpapers/${w.slug}`} 
-        onClick={handleClick} 
-        className="relative block h-full w-full overflow-hidden"
-        aria-label={w.title}
+      {/* ── Floating Canvas Image Area ───────────────────────────────────── */}
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label={`Preview ${w.title}`}
+        onClick={() => openPreview(w)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            openPreview(w);
+          }
+        }}
+        className="relative w-full cursor-pointer overflow-hidden rounded-[10px] bg-[#061528] select-none"
+        style={{ aspectRatio }}
       >
-        <div className="h-full w-full transition-transform duration-700 group-hover:scale-105">
+        {/* Media (Image or Looping Live video) */}
+        <div className="h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.04]">
           {isLive ? (
             <LiveThumb
               videoSrc={w.videoSrc!}
@@ -119,45 +158,68 @@ export function WallpaperCard({ w }: { w: CardWallpaper }) {
             />
           )}
         </div>
-      </Link>
 
-      {/* Top badges: PRO on premium, LIVE on motion, 18+ on mature */}
-      <div className="pointer-events-none absolute left-3 top-3 z-20 flex gap-1.5">
-        {isLive && (
-          <span className="inline-flex items-center gap-1.5 bg-black/75 backdrop-blur-md border border-accent/40 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest text-accent shadow-lg">
-            <span className="size-1.5 rounded-full bg-accent animate-pulse" />
-            LIVE
-          </span>
-        )}
-        {w.isMature && (
-          <span className="inline-flex items-center bg-black/75 backdrop-blur-md border border-white/20 px-2 py-0.5 text-[10px] font-mono font-bold text-white/70 uppercase shadow-lg">
-            18+
-          </span>
-        )}
-      </div>
+        {/* Top-left Badges (Understated indicators) */}
+        <div className="pointer-events-none absolute left-2.5 top-2.5 z-20 flex items-center gap-1.5">
+          {isLive && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-black/70 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-accent backdrop-blur-md shadow-md">
+              <span className="size-1.5 rounded-full bg-accent animate-pulse" />
+              LIVE
+            </span>
+          )}
+          {w.isMature && (
+            <span className="inline-flex items-center rounded-full border border-white/20 bg-black/70 px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase text-white/75 backdrop-blur-md shadow-md">
+              18+
+            </span>
+          )}
+        </div>
 
-      {w.isPremium && (
-        <span className="pointer-events-none absolute right-3 top-3 z-20 inline-flex items-center gap-1 bg-black/80 backdrop-blur-md border border-accent/40 px-2.5 py-0.5 text-[10px] font-bold text-accent shadow-lg tracking-wider">
-          <Lock size={10} />
-          PRO
-        </span>
-      )}
+        {/* Top-right Quick Actions: Favorite & Pro Indicator */}
+        <div className="absolute right-2.5 top-2.5 z-20 flex items-center gap-1.5">
+          {w.isPremium && (
+            <span className="pointer-events-none inline-flex items-center gap-1 rounded-full border border-accent/40 bg-black/75 px-2 py-0.5 text-[9px] font-bold tracking-wider text-accent backdrop-blur-md shadow-md">
+              <Lock size={9} />
+              PRO
+            </span>
+          )}
 
-      {/* Floating details only on hover with subtle bottom scrim */}
-      <div className="absolute inset-x-0 bottom-0 z-20 pt-8 pb-3.5 px-3.5 bg-gradient-to-t from-black/85 via-black/40 to-transparent translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 pointer-events-auto">
-        <div className="w-8 h-1 bg-accent mb-2" />
+          {/* Quick Save Heart (visible on hover, or permanently if saved) */}
+          <button
+            type="button"
+            aria-label={isSaved ? `Remove ${w.title} from saved` : `Save ${w.title}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              favorites.toggleSave({ id: w.id, slug: w.slug, title: w.title });
+            }}
+            className={`flex size-7 cursor-pointer items-center justify-center rounded-full border backdrop-blur-md transition-all duration-200 ${
+              isSaved
+                ? "border-accent bg-black/80 text-accent opacity-100 shadow-[0_0_10px_rgba(227,233,53,0.35)]"
+                : "border-white/20 bg-black/55 text-white/80 opacity-0 group-hover:opacity-100 hover:border-white/40 hover:bg-black/80 hover:text-white"
+            }`}
+          >
+            <Heart size={13} className={isSaved ? "fill-accent text-accent" : ""} />
+          </button>
+        </div>
 
-        <div className="flex items-end justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-sm font-bold text-white tracking-wider uppercase drop-shadow-md">
-              {w.title}
-            </h3>
-            <p className="truncate text-[11px] font-mono uppercase text-white/70">
-              {w.categorySlug} · {w.device}
-            </p>
-          </div>
+        {/* Soft Dark Hover Overlay with Action Pills (Desktop Hover) */}
+        <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-end p-2.5 bg-gradient-to-t from-black/80 via-black/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          <div className="pointer-events-auto flex items-center justify-between gap-1.5">
+            {/* Quick Preview Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                openPreview(w);
+              }}
+              className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-white/25 bg-black/60 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur-md shadow-lg transition-all hover:border-white/40 hover:bg-black/80 hover:scale-105 active:scale-95"
+            >
+              <Maximize2 size={12} className="text-accent" />
+              <span>Preview</span>
+            </button>
 
-          <div className="shrink-0">
+            {/* Direct Download / Cart Button */}
             {w.isPremium ? (
               <button
                 type="button"
@@ -176,22 +238,166 @@ export function WallpaperCard({ w }: { w: CardWallpaper }) {
                         device: w.device,
                       });
                 }}
-                className="flex cursor-pointer items-center gap-1.5 bg-primary px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-primary/90 transition-colors shadow-lg"
+                className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-accent/40 bg-accent/90 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[#081d37] shadow-lg backdrop-blur-md transition-all hover:bg-accent hover:scale-105 active:scale-95"
               >
-                {inCart ? <Check size={13} /> : <Plus size={13} />}
-                {formatPrice(w.priceCents)}
+                {inCart ? <Check size={12} /> : <Plus size={12} />}
+                <span>{formatPrice(w.priceCents)}</span>
               </button>
             ) : (
-              <Link
-                href={`/wallpapers/${w.slug}`}
-                className="flex items-center gap-1 bg-white/20 hover:bg-white/30 backdrop-blur-md px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-white transition-colors"
+              <a
+                href={`/api/download/free/${w.id}`}
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-white/25 bg-white/20 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-wider text-white backdrop-blur-md shadow-lg transition-all hover:bg-white/30 hover:scale-105 active:scale-95"
               >
-                <Download size={13} /> 4K
-              </Link>
+                <Download size={12} />
+                <span>4K</span>
+              </a>
             )}
           </div>
         </div>
       </div>
-    </motion.article>
+
+      {/* ── Minimal Caption System ───────────────────────────────────────── */}
+      <div className="relative mt-2 flex items-center justify-between gap-2 px-1 pb-0.5">
+        <Link
+          href={`/wallpapers/${w.slug}`}
+          className="min-w-0 flex-1 truncate text-[12px] sm:text-[13px] font-medium tracking-tight text-white/90 transition-colors hover:text-accent"
+          title={w.title}
+        >
+          {w.title}
+        </Link>
+
+        {/* Discreet Three-Dot Options Menu */}
+        <div className="relative shrink-0" ref={menuRef}>
+          <button
+            type="button"
+            aria-label={`Options for ${w.title}`}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setMenuOpen((prev) => !prev);
+            }}
+            className={`flex size-7 cursor-pointer items-center justify-center rounded-full transition-colors ${
+              menuOpen
+                ? "bg-white/15 text-white"
+                : "text-white/40 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <MoreHorizontal size={15} />
+          </button>
+
+          {/* Floating Dropdown Popover */}
+          {menuOpen && (
+            <div
+              role="menu"
+              aria-orientation="vertical"
+              className="absolute right-0 bottom-full z-40 mb-1.5 w-44 rounded-xl border border-white/10 bg-[#0d233e]/95 p-1 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150"
+            >
+              {/* Quick Preview */}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setMenuOpen(false);
+                  openPreview(w);
+                }}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <Maximize2 size={13} className="text-accent" />
+                <span>Quick Preview</span>
+              </button>
+
+              {/* View Details Page */}
+              <Link
+                href={`/wallpapers/${w.slug}`}
+                role="menuitem"
+                onClick={() => setMenuOpen(false)}
+                className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <ExternalLink size={13} />
+                <span>View Details</span>
+              </Link>
+
+              {/* Save to Favorites */}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  favorites.toggleSave({ id: w.id, slug: w.slug, title: w.title });
+                  setMenuOpen(false);
+                }}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                <Heart
+                  size={13}
+                  className={isSaved ? "fill-accent text-accent" : "text-white/60"}
+                />
+                <span>{isSaved ? "Remove Saved" : "Save Wallpaper"}</span>
+              </button>
+
+              {/* Download / Buy */}
+              {w.isPremium ? (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    inCart
+                      ? cart.remove(w.id)
+                      : cart.add({
+                          wallpaperId: w.id,
+                          slug: w.slug,
+                          title: w.title,
+                          priceCents: w.priceCents,
+                          previewUrl: w.previewSrc,
+                          device: w.device,
+                        });
+                    setMenuOpen(false);
+                  }}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  {inCart ? <Check size={13} className="text-accent" /> : <Plus size={13} />}
+                  <span>{inCart ? "In Cart" : `Add (${formatPrice(w.priceCents)})`}</span>
+                </button>
+              ) : (
+                <a
+                  href={`/api/download/free/${w.id}`}
+                  role="menuitem"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+                >
+                  <Download size={13} className="text-accent" />
+                  <span>Download 4K</span>
+                </a>
+              )}
+
+              <div className="my-1 border-t border-white/10" />
+
+              {/* Copy Share Link */}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={handleCopyLink}
+                className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs font-medium text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+              >
+                {copied ? (
+                  <Check size={13} className="text-accent" />
+                ) : (
+                  <Share2 size={13} />
+                )}
+                <span>{copied ? "Link Copied!" : "Copy Link"}</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </article>
   );
 }

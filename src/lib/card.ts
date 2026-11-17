@@ -25,5 +25,6 @@ export function toCardWallpaper(w: Wallpaper): CardWallpaper {
     placeholder: placeholderUrl(w) || undefined,
     kind: w.kind,
     videoSrc: videoPreviewUrl(w, { width: 700 }) ?? undefined,
+    resolution: w.resolution || (w.width && w.height ? `${w.width}x${w.height}` : undefined),
   };
 }

@@ -63,6 +63,25 @@ export function ProtectedImage({
   const [loaded, setLoaded] = useState(false);
   const showBackdrop = fill && fit === "contain" && blurBackdrop;
 
+  // An empty `src` makes the browser re-download the current page, and Next
+  // logs a console error for it. When no image URL could be built, render the
+  // neutral placeholder box instead of a broken <img>.
+  if (!src) {
+    return (
+      <div
+        className={cn(
+          "protected-img relative overflow-hidden",
+          contain && "flex items-center justify-center",
+          className,
+        )}
+        role="img"
+        aria-label={alt}
+      >
+        <div className="absolute inset-0 skeleton" aria-hidden />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(

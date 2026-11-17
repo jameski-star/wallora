@@ -4,7 +4,10 @@ import Link from "next/link";
 import { Container, SectionHeading } from "@/components/ui";
 import { Filters } from "@/components/filters";
 import { MasonryGrid, MasonrySkeleton } from "@/components/masonry-grid";
+import { Pagination } from "@/components/pagination";
 import { listWallpapers, countWallpapers, listCategories } from "@/lib/catalog";
+import { toCardWallpaper } from "@/lib/card";
+import { WALLPAPERS_PAGE_SIZE } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { DeviceType, WallpaperQuery } from "@/lib/types";
 
@@ -20,6 +23,7 @@ export async function generateMetadata({
   const sp = await searchParams;
   const search = typeof sp.search === "string" ? sp.search : undefined;
   const kind = typeof sp.kind === "string" ? sp.kind : undefined;
+  const rawPage = Math.max(1, parseInt(sp.page as string, 10) || 1);
 
   let title = "Browse 4K, OLED & Live Wallpapers · Desktop & Mobile | Aurava";
   let description =
@@ -34,6 +38,21 @@ export async function generateMetadata({
       "Explore curated 4K live video wallpapers. Lightweight H.264 MP4 loops for Windows 11 & Mac with <1% CPU load. Free and premium instant downloads ✓";
   }
 
+  // Clamp the canonical to a page that exists so `?page=999` doesn't emit a
+  // canonical URL with no content behind it. Count with the same filters the
+  // page itself lists under.
+  const total = await countWallpapers({
+    category: str(sp.category),
+    device: str(sp.device) as DeviceType | undefined,
+    tag: str(sp.tag),
+    kind: kind as WallpaperQuery["kind"],
+    search,
+    premium:
+      sp.premium === "true" ? true : sp.premium === "false" ? false : undefined,
+  });
+  const totalPages = Math.max(1, Math.ceil(total / WALLPAPERS_PAGE_SIZE));
+  const page = Math.min(rawPage, totalPages);
+
   return {
     title,
     description,
@@ -46,7 +65,7 @@ export async function generateMetadata({
       "desktop wallpapers 4k",
       "phone wallpapers hd",
     ],
-    alternates: { canonical: "/wallpapers" },
+    alternates: { canonical: page > 1 ? `/wallpapers?page=${page}` : "/wallpapers" },
     openGraph: {
       type: "website",
       title,
@@ -106,16 +125,24 @@ async function WallpapersContent({
     premium:
       sp.premium === "true" ? true : sp.premium === "false" ? false : undefined,
     sort: (str(sp.sort) as WallpaperQuery["sort"]) ?? "newest",
-    limit: 60,
+    limit: WALLPAPERS_PAGE_SIZE,
   };
 
   const isLive = query.kind === "live";
 
-  const [wallpapers, total, categories] = await Promise.all([
-    listWallpapers(query),
+  // Fetch the total first so a stale/out-of-range `page` can be clamped back
+  // into a page that actually has content, then fetch that page.
+  const [total, categories] = await Promise.all([
     countWallpapers(query),
     listCategories(),
   ]);
+  const totalPages = Math.max(1, Math.ceil(total / WALLPAPERS_PAGE_SIZE));
+  const page = Math.min(Math.max(1, parseInt(sp.page as string, 10) || 1), totalPages);
+  const wallpapers = await listWallpapers({
+    ...query,
+    offset: (page - 1) * WALLPAPERS_PAGE_SIZE,
+  });
+
 
   return (
     <>
@@ -169,7 +196,20 @@ async function WallpapersContent({
       <div className="mb-6">
         <Filters categories={categories} />
       </div>
-      <MasonryGrid wallpapers={wallpapers} />
+      <MasonryGrid cards={wallpapers.map(toCardWallpaper)} />
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        makeHref={(p) => {
+          const next = new URLSearchParams();
+          for (const [k, v] of Object.entries(sp)) {
+            if (typeof v === "string" && v && k !== "page") next.set(k, v);
+          }
+          if (p > 1) next.set("page", String(p));
+          const qs = next.toString();
+          return qs ? `/wallpapers?${qs}` : "/wallpapers";
+        }}
+      />
     </>
   );
 }

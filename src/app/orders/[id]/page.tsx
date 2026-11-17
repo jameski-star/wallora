@@ -5,6 +5,7 @@ import { Container, ButtonLink } from "@/components/ui";
 import { getRepo } from "@/lib/repo";
 import { getViewer } from "@/lib/auth";
 import { fulfillByMerchantRef } from "@/lib/orders";
+import { getWallpapersByIds } from "@/lib/catalog";
 import { formatPrice } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -61,6 +62,11 @@ export default async function OrderReceiptPage({
   }
 
   const viewer = await getViewer();
+  // Resolve the purchased wallpapers so a line whose catalog entry was removed
+  // (admin deleted it after the sale) can be shown as unavailable instead of
+  // offering a download link that would 404.
+  const wallpapers = await getWallpapersByIds(order.items.map((i) => i.wallpaperId));
+  const available = new Set(wallpapers.map((w) => w.id));
   const purchasedOn = new Date(order.createdAt).toLocaleDateString("en-GB", {
     year: "numeric",
     month: "short",
@@ -119,12 +125,18 @@ export default async function OrderReceiptPage({
                   {formatPrice(it.priceCents, order.currency)}
                 </p>
               </div>
-              <a
-                href={`/api/download/receipt/${order.id}?wp=${it.wallpaperId}&t=${encodeURIComponent(order.pesapalMerchantRef)}`}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:opacity-90"
-              >
-                <Download size={15} /> Download
-              </a>
+              {available.has(it.wallpaperId) ? (
+                <a
+                  href={`/api/download/receipt/${order.id}?wp=${it.wallpaperId}&t=${encodeURIComponent(order.pesapalMerchantRef)}`}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                >
+                  <Download size={15} /> Download
+                </a>
+              ) : (
+                <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-muted">
+                  No longer available
+                </span>
+              )}
             </li>
           ))}
         </ul>

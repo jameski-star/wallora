@@ -36,7 +36,11 @@ export async function GET(
     return NextResponse.json({ error: "Not in order" }, { status: 404 });
 
   const w = await repo.getWallpaperById(wallpaperId);
-  if (!w) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (!w)
+    return NextResponse.json(
+      { error: "This wallpaper is no longer available." },
+      { status: 404 },
+    );
 
   try {
     const url = await signedDownloadUrl(w);

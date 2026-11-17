@@ -88,12 +88,18 @@ export default async function CallbackPage({
                         {formatPrice(it.priceCents, order.currency)}
                       </p>
                     </div>
-                    <a
-                      href={`/api/download/receipt/${order.id}?wp=${it.wallpaperId}&t=${encodeURIComponent(order.pesapalMerchantRef)}`}
-                      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:opacity-90"
-                    >
-                      <Download size={15} /> Download
-                    </a>
+                    {w ? (
+                      <a
+                        href={`/api/download/receipt/${order.id}?wp=${it.wallpaperId}&t=${encodeURIComponent(order.pesapalMerchantRef)}`}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition hover:opacity-90"
+                      >
+                        <Download size={15} /> Download
+                      </a>
+                    ) : (
+                      <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-muted">
+                        No longer available
+                      </span>
+                    )}
                   </li>
                 );
               })}

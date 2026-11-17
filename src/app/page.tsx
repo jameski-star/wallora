@@ -16,6 +16,7 @@ import {
 import { listPosts } from "@/lib/blog";
 import { getFeaturedForDisplay } from "@/lib/featured";
 import { previewUrl, videoPreviewUrl, postImageUrl } from "@/lib/cloudinary";
+import { toCardWallpaper } from "@/lib/card";
 import { CATEGORIES, SITE_NAME } from "@/lib/constants";
 
 export const unstable_instant = { prefetch: "static", unstable_disableValidation: true };
@@ -338,7 +339,7 @@ export default async function HomePage() {
               }
             />
           </FadeInView>
-          <MasonryGrid wallpapers={popular} />
+          <MasonryGrid cards={popular.map(toCardWallpaper)} />
         </Container>
       </section>
 
@@ -365,7 +366,7 @@ export default async function HomePage() {
                 }
               />
             </FadeInView>
-            <MasonryGrid wallpapers={live} />
+            <MasonryGrid cards={live.map(toCardWallpaper)} />
           </Container>
         </section>
       )}
@@ -474,7 +475,7 @@ export default async function HomePage() {
               }
             />
           </FadeInView>
-          <MasonryGrid wallpapers={fresh} />
+          <MasonryGrid cards={fresh.map(toCardWallpaper)} />
         </Container>
       </section>
     </main>
