@@ -102,12 +102,12 @@ export function Navbar({
           {/* Search Bar Form / Expanded */}
           <div className="hidden md:flex items-center flex-1 max-w-xs mx-4">
             <form onSubmit={handleSearch} className="relative w-full">
-              <Search className="w-4 h-4 text-white/50 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Search className="w-4.5 h-4.5 text-white/50 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="SEARCH 4K WALLPAPERS…"
-                className="w-full bg-secondary/70 border border-white/10 text-white placeholder:text-white/40 text-xs font-semibold tracking-wider pl-9 pr-3 py-2 outline-none focus:border-primary transition-all"
+                className="w-full bg-[#0c213d]/80 border border-white/10 text-white placeholder:text-white/40 text-xs font-semibold tracking-wider pl-10 pr-3.5 py-2.5 rounded-xl outline-none focus:border-accent transition-all"
               />
             </form>
           </div>
@@ -128,11 +128,11 @@ export function Navbar({
             <Link
               href="/cart"
               aria-label="Cart"
-              className="relative text-white hover:text-accent transition-colors p-1"
+              className="relative text-white hover:text-accent transition-colors p-1.5 rounded-lg hover:bg-white/5"
             >
-              <ShoppingBag className="w-5 h-5" />
+              <ShoppingBag className="w-5.5 h-5.5" />
               {mounted && cart.hydrated && cart.count > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 grid min-w-4 h-4 place-items-center bg-accent px-1 text-[10px] font-black text-secondary">
+                <span className="absolute -right-1 -top-1 grid min-w-[18px] h-[18px] place-items-center bg-accent px-1 text-[10px] font-black text-[#081d37] rounded-full shadow-md">
                   {cart.count}
                 </span>
               )}
@@ -143,18 +143,18 @@ export function Navbar({
               <Link
                 href="/admin-dash"
                 aria-label="Admin Dashboard"
-                className="hidden sm:flex text-white/80 hover:text-accent transition-colors p-1"
+                className="hidden sm:flex text-white/80 hover:text-accent transition-colors p-1.5 rounded-lg hover:bg-white/5"
               >
-                <Shield className="w-5 h-5" />
+                <Shield className="w-5.5 h-5.5" />
               </Link>
             )}
 
             {/* User Account / LOG IN Button */}
             <Link
               href={displayName ? "/account" : "/login"}
-              className="hidden sm:flex items-center gap-2 px-5 py-2 border border-primary text-primary text-[12px] font-bold tracking-widest hover:bg-primary hover:text-white transition-all duration-300"
+              className="hidden sm:flex items-center gap-2.5 px-5 py-2.5 rounded-xl border border-primary text-primary text-[12px] font-bold tracking-widest hover:bg-primary hover:text-white transition-all duration-300"
             >
-              <User className="w-4 h-4" />
+              <User className="w-4.5 h-4.5" />
               {displayName ? displayName.toUpperCase().split(" ")[0] : "LOG IN"}
             </Link>
 

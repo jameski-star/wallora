@@ -113,16 +113,17 @@ export function ProtectedImage({
         src={src}
         alt={alt}
         {...(fill ? { fill: true } : { width, height })}
-        sizes={sizes ?? "(max-width:640px) 100vw, (max-width:1024px) 50vw, 25vw"}
+        sizes={sizes ?? "(max-width:640px) 50vw, (max-width:1024px) 33vw, 20vw"}
         unoptimized
         draggable={false}
-        fetchPriority={priority ? "high" : undefined}
+        decoding="async"
+        fetchPriority={priority ? "high" : "auto"}
         loading={priority ? "eager" : "lazy"}
         onLoad={() => setLoaded(true)}
         placeholder={placeholder ? "blur" : "empty"}
         blurDataURL={placeholder}
         className={cn(
-          "relative transition-opacity duration-500",
+          "relative transition-opacity duration-200",
           fill && fit === "cover" && "h-full w-full object-cover",
           fill && fit === "contain" && "h-full w-full object-contain",
           contain && "h-auto max-h-[80svh] w-auto max-w-full object-contain",

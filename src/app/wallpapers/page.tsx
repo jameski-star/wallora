@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Container, SectionHeading } from "@/components/ui";
 import { Filters } from "@/components/filters";
 import { MasonryGrid, MasonrySkeleton } from "@/components/masonry-grid";
@@ -8,7 +7,6 @@ import { Pagination } from "@/components/pagination";
 import { listWallpapers, countWallpapers, listCategories } from "@/lib/catalog";
 import { toCardWallpaper } from "@/lib/card";
 import { WALLPAPERS_PAGE_SIZE } from "@/lib/constants";
-import { cn } from "@/lib/utils";
 import type { DeviceType, WallpaperQuery } from "@/lib/types";
 
 type SP = Promise<{ [k: string]: string | string[] | undefined }>;
@@ -160,38 +158,6 @@ async function WallpapersContent({
             : `${total} wallpaper${total === 1 ? "" : "s"} available`
         }
       />
-
-      {/* Crawlable Category Navigation Pills for Direct SEO Equity Flow */}
-      <nav aria-label="Wallpaper categories" className="mb-6 flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1">
-        <Link
-          href="/wallpapers"
-          className={cn(
-            "rounded-full px-3 py-1 text-xs font-semibold tracking-wider transition-colors",
-            !query.category
-              ? "bg-accent text-accent-foreground"
-              : "border border-border/80 bg-surface text-muted hover:border-accent/40 hover:text-foreground"
-          )}
-        >
-          All
-        </Link>
-        {categories.map((cat) => {
-          const isActive = query.category === cat.slug;
-          return (
-            <Link
-              key={cat.slug}
-              href={`/wallpapers/${cat.slug}`}
-              className={cn(
-                "rounded-full px-3 py-1 text-xs font-semibold tracking-wider transition-colors",
-                isActive
-                  ? "bg-accent text-accent-foreground"
-                  : "border border-border/80 bg-surface text-muted hover:border-accent/40 hover:text-foreground"
-              )}
-            >
-              {cat.name}
-            </Link>
-          );
-        })}
-      </nav>
 
       <div className="mb-6">
         <Filters categories={categories} />

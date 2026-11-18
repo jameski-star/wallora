@@ -86,12 +86,12 @@ export function ScrollReveal({
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 28, scale: 0.97 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, margin: "-60px", amount: 0.05 }}
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "250px 0px" }}
       transition={{
-        duration: 0.55,
-        delay: Math.min(index * 0.06, 0.48), // cap max delay so long grids don't stall
+        duration: 0.25,
+        delay: index < 4 ? Math.min(index * 0.04, 0.12) : 0,
         ease: [0.22, 1, 0.36, 1],
       }}
       className={className}

@@ -61,6 +61,7 @@ export async function signup(
       password,
       options: {
         data: { display_name: displayName, date_of_birth: dateOfBirth },
+        emailRedirectTo: `${env.siteUrl}/api/auth/confirm?next=/verified`,
       },
     });
     if (error) return { error: error.message };

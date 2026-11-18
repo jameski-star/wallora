@@ -123,7 +123,11 @@ export function previewUrl(
     return publicId;
   }
 
-  const transforms = [`c_limit,w_${width}`, `q_${quality}`, "f_auto"];
+  const transforms = [
+    `c_limit,w_${width}`,
+    quality === 70 ? "q_auto:good" : `q_${quality}`,
+    "f_auto",
+  ];
   const { id, delivery } = normalizeSource(publicId);
   return deliveryUrl("image", delivery, transforms, id);
 }

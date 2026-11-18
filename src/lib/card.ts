@@ -21,10 +21,10 @@ export function toCardWallpaper(w: Wallpaper): CardWallpaper {
     priceCents: w.priceCents,
     isPremium: w.isPremium,
     isMature: w.isMature,
-    previewSrc: previewUrl(w, { width: 700 }),
+    previewSrc: previewUrl(w, { width: 540, quality: 65 }),
     placeholder: placeholderUrl(w) || undefined,
     kind: w.kind,
-    videoSrc: videoPreviewUrl(w, { width: 700 }) ?? undefined,
+    videoSrc: videoPreviewUrl(w, { width: 540 }) ?? undefined,
     resolution: w.resolution || (w.width && w.height ? `${w.width}x${w.height}` : undefined),
   };
 }
